@@ -5,8 +5,25 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:Compiler"
         mc:Ignorable="d"
-        Title="MainWindow" Height="350" Width="525">
-    <Grid>
-        
+        Title="Compiler For PL0" Height="500" Width="600
+        ">
+    <Grid Margin="0,0,0,0
+          ">
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="359*"/>
+            <ColumnDefinition Width="126*"/>
+            <ColumnDefinition Width="33*"/>
+        </Grid.ColumnDefinitions>
+        <TextBox HorizontalAlignment="Left" Height="282" Margin="23,91,0,0" TextWrapping="Wrap" Text="请在这里输入您的代码" VerticalAlignment="Top" Width="210"/>
+        <Label Content="文本模式" HorizontalAlignment="Left" Height="45" Margin="23,21,0,0" VerticalAlignment="Top" Width="146" FontSize="22"/>
+        <Label Content="文件模式" HorizontalAlignment="Left" Height="45" Margin="355,21,0,0" VerticalAlignment="Top" Width="146" FontSize="22" Grid.ColumnSpan="2"/>
+        <Button x:Name="input_file_button" Content="点我选择输入文件" HorizontalAlignment="Left" Margin="338,91,0,0" VerticalAlignment="Top" Width="185" Height="43" FontSize="18" Click="Button_Click_1" Grid.ColumnSpan="2" RenderTransformOrigin="0.716,0.505"/>
+        <Button x:Name="run_button" Content="运行" HorizontalAlignment="Left" Margin="231,394,0,0" VerticalAlignment="Top" Width="125" Click="Button_Click" Height="47"/>
+        <TextBox x:Name="InputFileDest" Grid.ColumnSpan="2" HorizontalAlignment="Left" Height="67" Margin="338,158,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="185"/>
+        <Label x:Name="label_input" Content="输入文件路径" Margin="249,158,28.2,0" VerticalAlignment="Top"/>
+        <Button x:Name="output_file_button" Content="点我选择输出文件" HorizontalAlignment="Left" Margin="338,247,0,0" VerticalAlignment="Top" Width="185" Height="43" FontSize="18" Click="Button_Click_2" Grid.ColumnSpan="2"/>
+        <Label x:Name="label_output" Content="输入文件路径" Margin="249,311,28.2,0" VerticalAlignment="Top"/>
+        <TextBox x:Name="OutputFileDest" Grid.ColumnSpan="2" HorizontalAlignment="Left" Height="62" Margin="338,311,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="185"/>
+
     </Grid>
 </Window>
