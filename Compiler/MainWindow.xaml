@@ -14,7 +14,7 @@
             <ColumnDefinition Width="126*"/>
             <ColumnDefinition Width="33*"/>
         </Grid.ColumnDefinitions>
-        <TextBox x:Name="TextCode" HorizontalAlignment="Left" Height="282" Margin="23,91,0,0" TextWrapping="Wrap" Text="请在这里输入您的代码" VerticalAlignment="Top" Width="210"/>
+        <TextBox x:Name="TextCode" HorizontalAlignment="Left" Height="282" Margin="23,91,0,0" TextWrapping="Wrap" Text="请在这里输入您的代码" VerticalAlignment="Top" Width="210" Grid.RowSpan="1000" AcceptsReturn="True" AcceptsTab="True"/>
         <Label Content="文本模式" HorizontalAlignment="Left" Height="45" Margin="52,21,0,0" VerticalAlignment="Top" Width="146" FontSize="22" RenderTransformOrigin="0.691,0.437"/>
         <Label Content="文件模式" HorizontalAlignment="Left" Height="45" Margin="355,21,0,0" VerticalAlignment="Top" Width="146" FontSize="22" Grid.ColumnSpan="2"/>
         <Button x:Name="input_file_button" Content="点我选择输入文件" HorizontalAlignment="Left" Margin="338,91,0,0" VerticalAlignment="Top" Width="185" Height="43" FontSize="18" Click="Button_Click_1" Grid.ColumnSpan="2" RenderTransformOrigin="0.716,0.505"/>
