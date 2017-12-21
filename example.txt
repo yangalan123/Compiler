@@ -2,25 +2,33 @@ const pi = 3,pi2=4;
 var a,b,c;
 procedure hhh;
 var tt;
-tt:=1
+tt:=1;
 procedure hhh2;
 var tt2;
 tt2:=1+2*(3+4)-10/(1+4);
 procedure hhh3;
 const a=3,b=4;
-if a<b then a:=a+b else b:=a+b
+if a<b then a:=a+b else b:=a+b;
 procedure hhh4;
 var a;
 while a<pi do
-a:=a+1
+a:=a+1;
 procedure hhh5;
 var a;
+begin
+a:=0;
+b:=(1+8)*3/(4-1);
+begin
+a:=0;
+end;
 repeat
-a:=a+1
+a:=a+1;
+b:=b+2
 until a<pi
+end;
 procedure hhh6;
-read(a)
+read(a,b,c);
 procedure hhh7;
-write(a)
+write(a,b,c);
 procedure hhh8;
-call hhh7;;;;;;;.
+call hhh7;;;;;;;;.

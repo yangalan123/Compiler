@@ -205,10 +205,19 @@ namespace Compiler
                 return false;
             }
             if (index<sym_list.Count())
-            while (sym_list[index][0]!=";"&& sym_list[index][0]=="procedure" && (flag=procedure_declaration_part()))
+            while (sym_list[index][0]==";" )
             {
+                    int backup = index;
+                    index += 1;
+                    flag = procedure_declaration_part();
+                    if (!flag)
+                    {
+                        index = backup;
+                        error_message = "";
+                        break;
+                    }
             }
-            error_message += "";
+            //error_message += "";
             if (index >= sym_list.Count || sym_list[index][0]!=";")
             {
                 error_message += "missing ';' at the end of procedure declaration in " + index.ToString() + "\r\n";
@@ -370,6 +379,7 @@ namespace Compiler
             if (sym_list[index][0]=="begin")
             {
                 int backup = index;
+                index += 1;
                 bool flag = statement();
                 if (!flag)
                 {
@@ -378,8 +388,8 @@ namespace Compiler
                 }
                 while (sym_list[index][0]==";")
                 {
-                    index += 1;
                     backup = index;
+                    index += 1;
                     flag = statement();
                     if (!flag)
                     {
@@ -446,6 +456,7 @@ namespace Compiler
                         index += 1;
                         while (index < sym_list.Count() && sym_list[index][0]==",")
                         {
+                            index += 1;
                             if(sym_list[index][1]!="标识符")
                             {
                                 error_message += "Illegal Read Parameters at" + index.ToString() + "\r\n";
@@ -486,6 +497,7 @@ namespace Compiler
                         index += 1;
                         while (index < sym_list.Count() && sym_list[index][0] == ",")
                         {
+                            index += 1;
                             if (sym_list[index][1] != "标识符")
                             {
                                 error_message += "Illegal Read Parameters at" + index.ToString() + "\r\n";
