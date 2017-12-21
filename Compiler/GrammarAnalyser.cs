@@ -145,7 +145,7 @@ namespace Compiler
                 bool flag = condition();
                 if (!flag)
                 {
-                    error_message += "(Error Code 25)if后应为条件(line:" + sym_list[backup][3] + ")\r\n";
+                    error_message += "(Error Code 25)while,if,until后应为条件(line:" + sym_list[backup][3] + ")\r\n";
                     return false;
                 }
                 if (sym_list[index][0]=="then")
@@ -304,7 +304,7 @@ namespace Compiler
             int backup = index;
             if (!flag)
             {
-                error_message += "Failure occurred in building term at" + sym_list[backup][3] + "\r\n";
+                error_message += "(Error Code 31)项定义错误(line:" + sym_list[backup][3] + ")\r\n";
                 return false;
             }
             else if (index < sym_list.Count)
@@ -316,7 +316,7 @@ namespace Compiler
                     flag = factor();
                     if (!flag)
                     {
-                        error_message += "Failure occurred in building a term in" + sym_list[backup][3] + "\r\n";
+                        error_message += "(Error Code 32)因子定义错误(line:" + sym_list[backup][3] + ")\r\n";
                         return false;
                     }
                     //index += 1;
@@ -329,10 +329,13 @@ namespace Compiler
         }
         bool expr()
         {
+            bool first = false;
             if (sym_list[index][0]=="+" || sym_list[index][1]=="-")
             {
                 index += 1;
+                first = true;
             }
+            int backup = index;
             if (term())
             {
                 while (index < sym_list.Count() && sym_list[index][0] == "+" || sym_list[index][0] == "-")
@@ -341,13 +344,24 @@ namespace Compiler
                     bool flag = term();
                     if (!flag)
                     {
-                        error_message += "Failure occurred in building an expression in" + sym_list[index][3] + "\r\n";
+                        error_message += "(Error Code 34)项定义错误(line:" + sym_list[backup][3] + ")\r\n";
                         return false;
                     }
                     //index += 1;
                 }
                 //have increased index by 1
                 return true;
+            }
+            else
+            {
+                if (first)
+                {
+                    error_message += "(Error Code 24)表达式不能以此开头(line: " + sym_list[backup][3] + ")\r\n";
+                }
+                else
+                {
+                    error_message += "(Error Code 33)表达式首项定义错误(line: " + sym_list[backup][3] + ")\r\n";
+                }
             }
             return false;
         }
@@ -363,7 +377,8 @@ namespace Compiler
                     //if (flag) index += 1;
                     return flag;
                 }
-                error_message += "Missing assign symbol at" + sym_list[index][3] + "\r\n";
+                else
+                    error_message += "(Error Code 13)应为赋值运算符:=(line:" + sym_list[index][3] + ")\r\n";
             }
             return false;
         }
@@ -376,21 +391,23 @@ namespace Compiler
                 bool flag = condition();
                 if (!flag)
                 {
-                    error_message += "(while-condition)Building While Loop Statement at "+sym_list[backup][3]+"\r\n";
+                    error_message += "(Error Code 25)while,if,until后应为条件(line:" + sym_list[backup][3] + ")\r\n";
                     return false;
                 }
-                if (sym_list[index][0]=="do")
+                if (sym_list[index][0] == "do")
                 {
                     backup = index;
                     index += 1;
                     flag = statement();
                     if (!flag)
                     {
-                        error_message += "(do-statement)Building While Loop Statement at" + sym_list[backup][3] + "\r\n";
+                        error_message += "(Error Code 7)应为语句(line:" + sym_list[backup][3] + ")\r\n";
                         return false;
-                  
+
                     }
                 }
+                else
+                    error_message += "(Error Code 18)应为do(line:"+sym_list[backup][3]+")\r\n";
                 return true;
             }
             return false;
@@ -401,44 +418,48 @@ namespace Compiler
             {
 
                 index += 1;
-                if (sym_list[index][1]=="标识符")
+                if (sym_list[index][1] == "标识符")
                 {
                     index += 1;
                     return true;
                 }
+                else
+                    error_message += "(Error Code 14)call后应为标识符(line:"+sym_list[index][3]+")\r\n";
             }
-            error_message += "Building Call Statement Failed at" + sym_list[index][3] + "\r\n";
+           // error_message += "Building Call Statement Failed at" + sym_list[index][3] + "\r\n";
             return false;
         }
         bool block_statement()
         {
             if (sym_list[index][0]=="begin")
             {
-                int backup = index;
                 index += 1;
+                int backup = index;
                 bool flag = statement();
                 if (!flag)
                 {
-                    error_message += "Building block statement failed at " + sym_list[index][3] + "\r\n";
+                    error_message += "(Error Code 7)应为语句(line:" + sym_list[backup][3] + ")\r\n";
                     return false;
                 }
                 while (sym_list[index][0]==";")
                 {
-                    backup = index;
                     index += 1;
+                    backup = index;
                     flag = statement();
                     if (!flag)
                     {
-                        error_message += "Building block statement failed at " + sym_list[index][3] + "\r\n";
+                        error_message += "(Error Code 7)应为语句(line:" + sym_list[backup][3] + ")\r\n";
                         return false;
                     }
                 }
             }
-            if (sym_list[index][0]=="end")
+            if (sym_list[index][0] == "end")
             {
                 index += 1;
                 return true;
             }
+            else
+                error_message += "(Error Code 17)应为分号或end(其实按照文法只能是end)(line:"+sym_list[index][3]+")\r\n";
             return false;
         }
         bool repeat_statement()
@@ -450,7 +471,7 @@ namespace Compiler
                 bool flag = statement();
                 if (!flag)
                 {
-                    error_message += "Building repeat statement failed at " + sym_list[backup][3] + "\r\n";
+                    error_message += "(Error Code 7)应为语句(line:" + sym_list[backup][3] + ")\r\n";
                     return false;
                 }
                 while (sym_list[index][0] == ";")
@@ -460,7 +481,7 @@ namespace Compiler
                     flag = statement();
                     if (!flag)
                     {
-                        error_message += "Building repeat statement failed at " + sym_list[backup][3] + "\r\n";
+                        error_message += "(Error Code 7)应为语句(line:" + sym_list[backup][3] + ")\r\n";
                         return false;
                     }
                 }
@@ -472,10 +493,14 @@ namespace Compiler
                 bool flag = condition();
                 if (!flag)
                 {
-                    error_message += "(until-condition)Building repeat statement at" + sym_list[backup][3] + "\r\n";
+                    error_message += "(Error Code 25)while,if,until后应为条件(line:" + sym_list[backup][3] + ")\r\n";
                     return false;
                 }
                 return true;
+            }
+            else
+            {
+                error_message += "(Error Code 35)缺少until(line:" + sym_list[index][3] + ")\r\n";
             }
             return false;
         }
