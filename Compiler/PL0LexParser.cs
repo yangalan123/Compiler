@@ -17,6 +17,7 @@ namespace Compiler
             private StringBuilder programstr = null;
             private int index = 0;
             private int length = 0;
+            private int num_lines = 0;
             HashSet<string> BOUNDSYM = new HashSet<string>(new string[] { ";", ",", "(", ")" ,"."});
             HashSet<string> OPERATORS = new HashSet<string>(new string[] { "+", "-", "*", "/", ":=", "=", "<>", "<=", ">=", "<", ">" });
             HashSet<string> KEYWORDS = new HashSet<string>(new string[] { "const", "var", "procedure", "if", "then", "while", "do", "begin", "end", "call", "read", "repeat", "until", "read", "write" ,"odd"});
@@ -26,6 +27,7 @@ namespace Compiler
                 result = new List<List<string>>();
                 index = 0;
                 length = 0;
+                num_lines = 0;
                 programstr = null;
             }
             public List<List<string>> parse(string text)
@@ -54,7 +56,13 @@ namespace Compiler
             bool isblank(char x)
             {
                 if (x == '\n' || x == '\r' || x == '\t' || x == ' ')
+                {
+                    if (x=='\n' || x=='\r')
+                    {
+                        num_lines += 1;
+                    }
                     return true;
+                }
                 return false;
             }
             bool isKEYWORD(String str)
@@ -75,9 +83,9 @@ namespace Compiler
                     return true;
                 return false;
             }
-            List<string> newItem(String symbol0,String symbol1,String symbol2)
+            List<string> newItem(String symbol0,String symbol1,String symbol2,String symbol3)
             {
-                return new List<string>(new string[] { symbol0, symbol1, symbol2});
+                return new List<string>(new string[] { symbol0, symbol1, symbol2,symbol3});
             }
             void getsym()
             {
@@ -102,11 +110,11 @@ namespace Compiler
                         retract();
                         if (isKEYWORD(token.ToString()))
                         {
-                            result.Add(newItem(token.ToString(),"关键字",""));
+                            result.Add(newItem(token.ToString(),"关键字","",num_lines.ToString()));
                         }
                         else
                         {
-                            result.Add(newItem(token.ToString(), "标识符", ""));
+                            result.Add(newItem(token.ToString(), "标识符", "", num_lines.ToString()));
                         }
                         //res = nextchar();
                     }
@@ -131,11 +139,11 @@ namespace Compiler
                                 try
                                 {
                                     long num = long.Parse(token.ToString());
-                                    result.Add(newItem(token.ToString(), "无符号整数", Convert.ToString(num, 2)));
+                                    result.Add(newItem(token.ToString(), "无符号整数", Convert.ToString(num, 2), num_lines.ToString()));
                                 }
                                 catch
                                 {
-                                    result.Add(newItem(token.ToString(), "无符号整数", "数值超过long范围"));
+                                    result.Add(newItem(token.ToString(), "无符号整数", "数值超过long范围", num_lines.ToString()));
                                     return;
                                 }
                                 retract();
@@ -154,10 +162,10 @@ namespace Compiler
                             try
                             {
                                 float floatnumber = float.Parse(token.ToString());
-                                result.Add(newItem(token.ToString(), "浮点数常数", Convert.ToString(BitConverter.DoubleToInt64Bits(floatnumber), 2)));
+                                result.Add(newItem(token.ToString(), "浮点数常数", Convert.ToString(BitConverter.DoubleToInt64Bits(floatnumber), 2), num_lines.ToString()));
                             }catch
                             {
-                                result.Add(newItem("无效的浮点格式", "", ""));
+                                result.Add(newItem("无效的浮点格式", "", "", num_lines.ToString()));
                                 return;
                             }
                         }
@@ -167,11 +175,11 @@ namespace Compiler
                             try
                             {
                                 long num = long.Parse(token.ToString());
-                                result.Add(newItem(token.ToString(), "无符号整数", Convert.ToString(num,2)));
+                                result.Add(newItem(token.ToString(), "无符号整数", Convert.ToString(num,2), num_lines.ToString()));
                             }
                             catch
                             {
-                                result.Add(newItem(token.ToString(), "无符号整数", "数值超过long范围"));
+                                result.Add(newItem(token.ToString(), "无符号整数", "数值超过long范围", num_lines.ToString()));
                                 return;
                             }
                             
@@ -182,14 +190,14 @@ namespace Compiler
                     else if (isBOUNDSYMBOL(Convert.ToString(res.Item2)))
                     {
                         token.Append(now_char);
-                        result.Add(newItem(token.ToString(), "界符", ""));
+                        result.Add(newItem(token.ToString(), "界符", "", num_lines.ToString()));
                        // res = nextchar();
                     }
                     else if (isOPERATOR(Convert.ToString(res.Item2)) || res.Item2==':')
                     {
                         token.Append(now_char);
                         if (res.Item2 != '>' && res.Item2 != '<' && res.Item2!=':')
-                            result.Add(newItem(token.ToString(), "单字符运算符", ""));
+                            result.Add(newItem(token.ToString(), "单字符运算符", "", num_lines.ToString()));
                         else
                         {
                             res = nextchar();
@@ -200,17 +208,17 @@ namespace Compiler
                                 if (OPERATORS.Contains(testtoken.ToString()))
                                 {
                                     token.Append(res.Item2);
-                                    result.Add(newItem(token.ToString(), "双字符运算符", ""));
+                                    result.Add(newItem(token.ToString(), "双字符运算符", "", num_lines.ToString()));
                                 }
                                 else
                                 {
-                                    result.Add(newItem("无效的操作符", "", ""));
+                                    result.Add(newItem("无效的操作符", "", "", num_lines.ToString()));
                                     return;
                                 }
                             }
                             else
                             {
-                                result.Add(newItem(token.ToString(), "单字符运算符", ""));
+                                result.Add(newItem(token.ToString(), "单字符运算符", "", num_lines.ToString()));
                                 retract();
                             }
                         }
@@ -218,7 +226,7 @@ namespace Compiler
                     }
                     else
                     {
-                        result.Add(newItem(now_char.ToString(), "未知字符", "错误!"));
+                        result.Add(newItem(now_char.ToString(), "未知字符", "错误!", num_lines.ToString()));
                         return;
                     }
                     if (res.Item1 == EOF_FLAG) break;

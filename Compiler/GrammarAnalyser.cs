@@ -23,17 +23,25 @@ namespace Compiler
             if (sym_list[index][1]=="标识符")
             {
                 index += 1;
-                if (sym_list[index][0]=="=")
+                if (sym_list[index][0] == "=")
                 {
                     index += 1;
-                    if (sym_list[index][1] =="无符号整数")
+                    if (sym_list[index][1] == "无符号整数")
                     {
+                        if (sym_list[index][2] == "数值超过long范围")
+                            error_message += "(Error Code 30) 这个数太大 (line:"+sym_list[index][3]+")\r\n";
                         index += 1;
+                        
                         return true;
                     }
+                    else
+                        error_message += "(Error Code 2) =号后应为数(line:" + sym_list[index][3] + ")\r\n";
                 }
+                else if (sym_list[index][0] == ":=")
+                    error_message += "(Error Code 1) 应为=而不是:= (line:"+sym_list[index][3]+")\r\n";
             }
-            error_message += "Error in a single constant declaration statement:" + index.ToString() + "\r\n";
+            else
+                error_message += "(Error Code 4) const,var,procedure之后应为标识符(line:" + sym_list[index][3] + ")\r\n";
             return false;
         }
         bool const_declaration_part()
@@ -56,7 +64,11 @@ namespace Compiler
                         if (sym_list[index][1] == "标识符")
                         {
                             flag = const_declaration_atom();
-                            if (!flag) return false;
+                            if (!flag)
+                            {
+                                error_message += "(Error Code 26)常量声明时,逗号后应为标识符(line:"+sym_list[index][3]+")\r\n";
+                                return false;
+                            }
                             //index += 1;
                         }
                     
@@ -78,20 +90,22 @@ namespace Compiler
                         index += 1;
                         if (sym_list[index][1]!="标识符")
                         {
-                            error_message += "Wrong Variable Declaraion in" + index.ToString() + "\r\n";
+                            error_message += "(Error Code 4) const, var, procedure之后应为标识符(line: " + sym_list[index][3] + ")\r\n";
                             return false;
                         }
                         index += 1;
                     }
-                    if (sym_list[index][0]==";")
+                    if (sym_list[index][0] == ";")
                     {
                         index += 1;
                         return true;
                     }
+                    else
+                        error_message += "(Error Code 5) 缺少逗号或分号 (line:"+sym_list[index][3]+")\r\n";
                 }
                 else
                 {
-                    error_message += "Wrong Variable Declaraion in" + index.ToString() + "\r\n";
+                    error_message += "(Error Code 4) const, var, procedure之后应为标识符(line: " + sym_list[index][3] + ")\r\n";
                     return false;
                 }
             }
@@ -110,6 +124,14 @@ namespace Compiler
                         index += 1;
                         return true;
                     }
+                    else
+                        error_message += "(Error Code 5) 缺少逗号或分号 (line:" + sym_list[index][3] + ")\r\n";
+
+                }
+                else
+                {
+                    error_message += "(Error Code 4) const, var, procedure之后应为标识符(line: " + sym_list[index][3] + ")\r\n";
+                    return false;
                 }
             }
             return false;
@@ -123,7 +145,7 @@ namespace Compiler
                 bool flag = condition();
                 if (!flag)
                 {
-                    error_message += "(if-condition)Building Condition Statement Failed at" + backup.ToString() + "\r\n";
+                    error_message += "(Error Code 25)if后应为条件(line:" + sym_list[backup][3] + ")\r\n";
                     return false;
                 }
                 if (sym_list[index][0]=="then")
@@ -133,9 +155,14 @@ namespace Compiler
                     flag = statement();
                     if(!flag)
                     {
-                        error_message += "(then-statement)Building Condition Statement Failed at" + backup.ToString() + "\r\n";
+                        error_message += "(Error Code 7)应为语句(line:" + sym_list[backup][3] + ")\r\n";
                         return false;
                     }
+                }
+                else
+                {
+                    error_message += "(Error Code 16)应为then(line:"+sym_list[index][3]+")\r\n";
+                    return false;
                 }
                 if (sym_list[index][0]=="else")
                 {
@@ -144,7 +171,7 @@ namespace Compiler
                     flag = statement();
                     if (!flag)
                     {
-                        error_message += "(then-statement)Building Condition Statement Failed at" + backup.ToString() + "\r\n";
+                        error_message += "(Error Code 7)应为语句(line:" + sym_list[backup][3] + ")\r\n";
                         return false;
                     }
                 }
@@ -161,7 +188,7 @@ namespace Compiler
                 bool flag = expr();
                 if (!flag)
                 {
-                    error_message += "Failure occurred in building an expression in" + backup.ToString() + "\r\n";
+                    error_message += "(Error Code 27)应为表达式(line:" + sym_list[backup][3] + ")\r\n";
                     return false;
                 }
                 return true;
@@ -172,7 +199,7 @@ namespace Compiler
                 bool flag = expr();
                 if (!flag)
                 {
-                    error_message += "Failure occurred in building an expression in" + backup.ToString() + "\r\n";
+                    error_message += "(Error Code 27)应为表达式(line:" + sym_list[backup][3] + ")\r\n";
                     return false;
                 }
                 if (Relation_operator.Contains(sym_list[index][0]))
@@ -182,10 +209,15 @@ namespace Compiler
                     flag = expr();
                     if (!flag)
                     {
-                        error_message += "Failure occurred in building an expression in" + backup.ToString() + "\r\n";
+                        error_message += "(Error Code 27)应为表达式(line:" + sym_list[backup][3] + ")\r\n"; 
                         return false;
                     }
                     return true;
+                }
+                else
+                {
+                    error_message += "(Error Code 20)应为关系运算符(line:"+sym_list[index][3]+")\r\n";
+                    return false;
                 }
             }
             return false;
@@ -195,32 +227,34 @@ namespace Compiler
             bool flag = procedure_header();
             if (!flag)
             {
-                error_message += "Error in procedure header in" + index.ToString() + "\r\n";
+                error_message += "(Error Code 28)过程头部定义错误(line:" + sym_list[index][3] + ")\r\n";
                 return false;
             }
+            int backup = index;
             flag = program();
             if (!flag)
             {
-                error_message += "Failed in parsing procedure declaration in " + index.ToString() + "\r\n";
+                error_message += "(Error Code 29)过程体定义错误(line:" + sym_list[backup][3] + ")\r\n";
                 return false;
             }
             if (index<sym_list.Count())
             while (sym_list[index][0]==";" )
             {
-                    int backup = index;
+                    backup = index;
                     index += 1;
+                    var sb = new StringBuilder(error_message);
                     flag = procedure_declaration_part();
                     if (!flag)
                     {
                         index = backup;
-                        error_message = "";
+                        error_message = sb.ToString();
                         break;
                     }
             }
             //error_message += "";
             if (index >= sym_list.Count || sym_list[index][0]!=";")
             {
-                error_message += "missing ';' at the end of procedure declaration in " + index.ToString() + "\r\n";
+                error_message += "(Error Code 5) 缺少逗号或分号 (line:" + sym_list[index][3] + ")\r\n";
                 return false;
             }
             index += 1;
@@ -245,7 +279,7 @@ namespace Compiler
                 bool flag = expr();
                 if (!flag)
                 {
-                    error_message += "Failure occurred in building an expression in" + backup.ToString() + "\r\n";
+                    error_message += "(Error Code 27)应为表达式(line:" + sym_list[backup][3] + ")\r\n";
                     return false;
                 }
                 //index += 1;
@@ -256,10 +290,12 @@ namespace Compiler
                 }
                 else
                 {
-                    error_message += "Missing ')' in building a factor in " + index.ToString() + "\r\n";
+                    error_message += "(Error Code 22)缺少右括号(line: " + sym_list[index][3] + ")\r\n";
                     return false;
                 }
             }
+            else
+                error_message += "(Error Code 31)无效的因子开头(line: " + sym_list[index][3] + ")\r\n";
             return false;
         }
         bool term()
@@ -268,7 +304,7 @@ namespace Compiler
             int backup = index;
             if (!flag)
             {
-                error_message += "Failure occurred in building term at" + backup.ToString() + "\r\n";
+                error_message += "Failure occurred in building term at" + sym_list[backup][3] + "\r\n";
                 return false;
             }
             else if (index < sym_list.Count)
@@ -280,7 +316,7 @@ namespace Compiler
                     flag = factor();
                     if (!flag)
                     {
-                        error_message += "Failure occurred in building a term in" + backup.ToString() + "\r\n";
+                        error_message += "Failure occurred in building a term in" + sym_list[backup][3] + "\r\n";
                         return false;
                     }
                     //index += 1;
@@ -305,7 +341,7 @@ namespace Compiler
                     bool flag = term();
                     if (!flag)
                     {
-                        error_message += "Failure occurred in building an expression in" + index.ToString() + "\r\n";
+                        error_message += "Failure occurred in building an expression in" + sym_list[index][3] + "\r\n";
                         return false;
                     }
                     //index += 1;
@@ -327,7 +363,7 @@ namespace Compiler
                     //if (flag) index += 1;
                     return flag;
                 }
-                error_message += "Missing assign symbol at" + index.ToString() + "\r\n";
+                error_message += "Missing assign symbol at" + sym_list[index][3] + "\r\n";
             }
             return false;
         }
@@ -340,7 +376,7 @@ namespace Compiler
                 bool flag = condition();
                 if (!flag)
                 {
-                    error_message += "(while-condition)Building While Loop Statement at "+backup.ToString()+"\r\n";
+                    error_message += "(while-condition)Building While Loop Statement at "+sym_list[backup][3]+"\r\n";
                     return false;
                 }
                 if (sym_list[index][0]=="do")
@@ -350,7 +386,7 @@ namespace Compiler
                     flag = statement();
                     if (!flag)
                     {
-                        error_message += "(do-statement)Building While Loop Statement at" + backup.ToString() + "\r\n";
+                        error_message += "(do-statement)Building While Loop Statement at" + sym_list[backup][3] + "\r\n";
                         return false;
                   
                     }
@@ -371,7 +407,7 @@ namespace Compiler
                     return true;
                 }
             }
-            error_message += "Building Call Statement Failed at" + index.ToString() + "\r\n";
+            error_message += "Building Call Statement Failed at" + sym_list[index][3] + "\r\n";
             return false;
         }
         bool block_statement()
@@ -383,7 +419,7 @@ namespace Compiler
                 bool flag = statement();
                 if (!flag)
                 {
-                    error_message += "Building block statement failed at " + index.ToString() + "\r\n";
+                    error_message += "Building block statement failed at " + sym_list[index][3] + "\r\n";
                     return false;
                 }
                 while (sym_list[index][0]==";")
@@ -393,7 +429,7 @@ namespace Compiler
                     flag = statement();
                     if (!flag)
                     {
-                        error_message += "Building block statement failed at " + index.ToString() + "\r\n";
+                        error_message += "Building block statement failed at " + sym_list[index][3] + "\r\n";
                         return false;
                     }
                 }
@@ -414,7 +450,7 @@ namespace Compiler
                 bool flag = statement();
                 if (!flag)
                 {
-                    error_message += "Building repeat statement failed at " + backup.ToString() + "\r\n";
+                    error_message += "Building repeat statement failed at " + sym_list[backup][3] + "\r\n";
                     return false;
                 }
                 while (sym_list[index][0] == ";")
@@ -424,7 +460,7 @@ namespace Compiler
                     flag = statement();
                     if (!flag)
                     {
-                        error_message += "Building repeat statement failed at " + backup.ToString() + "\r\n";
+                        error_message += "Building repeat statement failed at " + sym_list[backup][3] + "\r\n";
                         return false;
                     }
                 }
@@ -436,7 +472,7 @@ namespace Compiler
                 bool flag = condition();
                 if (!flag)
                 {
-                    error_message += "(until-condition)Building repeat statement at" + backup.ToString() + "\r\n";
+                    error_message += "(until-condition)Building repeat statement at" + sym_list[backup][3] + "\r\n";
                     return false;
                 }
                 return true;
@@ -459,7 +495,7 @@ namespace Compiler
                             index += 1;
                             if(sym_list[index][1]!="标识符")
                             {
-                                error_message += "Illegal Read Parameters at" + index.ToString() + "\r\n";
+                                error_message += "Illegal Read Parameters at" + sym_list[index][3] + "\r\n";
                                 return false;
                             }
                             index += 1;
@@ -471,13 +507,13 @@ namespace Compiler
                         }
                         else
                         {
-                            error_message += "Missing ( in building read statement at" + index.ToString()+"\r\n";
+                            error_message += "Missing ( in building read statement at" + sym_list[index][3]+"\r\n";
                             return false;
                         }
                     }
                     else
                     {
-                        error_message += "(first symbol after ( )Building Read Statement Failed at" + index.ToString() + "\r\n";
+                        error_message += "(first symbol after ( )Building Read Statement Failed at" + sym_list[index][3] + "\r\n";
                         return false;
                     }
                 }
@@ -500,7 +536,7 @@ namespace Compiler
                             index += 1;
                             if (sym_list[index][1] != "标识符")
                             {
-                                error_message += "Illegal Read Parameters at" + index.ToString() + "\r\n";
+                                error_message += "Illegal Read Parameters at" + sym_list[index][3] + "\r\n";
                                 return false;
                             }
                             index += 1;
@@ -512,13 +548,13 @@ namespace Compiler
                         }
                         else
                         {
-                            error_message += "Missing ( in building read statement at" + index.ToString() + "\r\n";
+                            error_message += "Missing ( in building read statement at" + sym_list[index][3] + "\r\n";
                             return false;
                         }
                     }
                     else
                     {
-                        error_message += "(first symbol after ( )Building Read Statement Failed at" + index.ToString() + "\r\n";
+                        error_message += "(first symbol after ( )Building Read Statement Failed at" + sym_list[index][3] + "\r\n";
                         return false;
                     }
                 }
@@ -535,7 +571,7 @@ namespace Compiler
                 bool flag = assign_statement();
                 if (!flag)
                 {
-                    error_message += "build assign statement failed at" + backup.ToString() + "\r\n";
+                    error_message += "build assign statement failed at" + sym_list[backup][3] + "\r\n";
                     return false;
                 }
                 return true;
@@ -546,7 +582,7 @@ namespace Compiler
                 bool flag = condition_statement();
                 if (!flag)
                 {
-                    error_message += "build condition statement failed at" + backup.ToString() + "\r\n";
+                    error_message += "build condition statement failed at" + sym_list[backup][3] + "\r\n";
                     return false;
                 }
                 return true;
@@ -557,7 +593,7 @@ namespace Compiler
                 bool flag = while_loop_statement();
                 if (!flag)
                 {
-                    error_message += "build while_loop statement failed at" + backup.ToString() + "\r\n";
+                    error_message += "build while_loop statement failed at" + sym_list[backup][3] + "\r\n";
                     return false;
                 }
                 return true;
@@ -568,7 +604,7 @@ namespace Compiler
                 bool flag = repeat_statement();
                 if (!flag)
                 {
-                    error_message += "build repeat statement failed at" + backup.ToString() + "\r\n";
+                    error_message += "build repeat statement failed at" + sym_list[backup][3] + "\r\n";
                     return false;
                 }
                 return true;
@@ -579,7 +615,7 @@ namespace Compiler
                 bool flag = block_statement();
                 if (!flag)
                 {
-                    error_message += "build block statement failed at" + backup.ToString() + "\r\n";
+                    error_message += "build block statement failed at" + sym_list[backup][3] + "\r\n";
                     return false;
                 }
                 return true;
@@ -590,7 +626,7 @@ namespace Compiler
                 bool flag = call_statement();
                 if (!flag)
                 {
-                    error_message += "build call statement failed at" + backup.ToString() + "\r\n";
+                    error_message += "build call statement failed at" + sym_list[backup][3] + "\r\n";
                     return false;
                 }
                 return true;
@@ -601,7 +637,7 @@ namespace Compiler
                 bool flag = read_statement();
                 if (!flag)
                 {
-                    error_message += "build read statement failed at" + backup.ToString() + "\r\n";
+                    error_message += "build read statement failed at" + sym_list[backup][3] + "\r\n";
                     return false;
                 }
                 return true;
@@ -612,7 +648,7 @@ namespace Compiler
                 bool flag = write_statement();
                 if (!flag)
                 {
-                    error_message += "build write statement failed at" + backup.ToString() + "\r\n";
+                    error_message += "build write statement failed at" + sym_list[backup][3] + "\r\n";
                     return false;
                 }
                 return true;
@@ -650,7 +686,7 @@ namespace Compiler
             {
                 if (e is IndexOutOfRangeException || e is ArgumentOutOfRangeException)
                 {
-                    error_message += "Incomplete subProgram, Checking at" + index.ToString() + "\r\n";
+                    error_message += "Incomplete subProgram, Checking at" + sym_list[index][3] + "\r\n";
                     return false;
                 }
                 else
@@ -680,7 +716,7 @@ namespace Compiler
                 Console.WriteLine(error_message);
             }
             flag = checkend();
-            if (!flag) error_message += "Incomplete Program, Checking at" + index.ToString()+"\r\n";
+            if (!flag) error_message += "Incomplete Program, Checking at" + sym_list[index][3]+"\r\n";
             if (!flag)
             {
                 Console.WriteLine(error_message);

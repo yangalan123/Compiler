@@ -1,0 +1,35 @@
+if (sym_list[index][2] == "数值超过long范围")
+                            error_message += "(Error Code 30) 这个数太大 (line:"+sym_list[index][3]+")\r\n";
+
+else
+                        error_message += "(Error Code 2) =号后应为数(line:" + sym_list[index][3] + ")\r\n";
+
+else if (sym_list[index][0] == ":=")
+                    error_message += "(Error Code 1) 应为=而不是:= (line:"+sym_list[index][3]+")\r\n";
+else
+                error_message += "(Error Code 4) const,var,procedure之后应为标识符(line:" + sym_list[index][3] + ")\r\n";
+
+if (sym_list[index][1]!="标识符")
+                        {
+                            error_message += "(Error Code 4) const, var, procedure之后应为标识符(line: " + sym_list[index][3] + ")\r\n";
+                            return false;
+                        }
+if (!flag)
+                            {
+                                error_message += "(Error Code 26)常量声明时,逗号后应为标识符(line:"+sym_list[index][3]+")\r\n";
+                                return false;
+                            }
+else
+                        error_message += "(Error Code 5) 缺少逗号或分号 (line:"+sym_list[index][3]+")\r\n";
+if (!flag)
+                {
+                    error_message += "(Error Code 25)if后应为条件(line:" + sym_list[backup][3] + ")\r\n";
+                    return false;
+                }
+
+error_message += "(Error Code 7)应为语句(line:" + sym_list[backup][3] + ")\r\n";
+error_message += "(Error Code 27)应为表达式(line:" + sym_list[backup][3] + ")\r\n";
+error_message += "(Error Code 28)过程头部定义错误(line:" + sym_list[backup][3] + ")\r\n";
+error_message += "(Error Code 16)应为then(line:"+sym_list[index][3]+")\r\n";
+error_message += "(Error Code 22)缺少右括号(line: " + sym_list[index][3] + ")\r\n";
+error_message += "(Error Code 31)无效的因子开头(line: " + sym_list[index][3] + ")\r\n";
