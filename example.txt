@@ -2,25 +2,25 @@ const pi = 3,pi2=4;
 var a,b,c;
 procedure hhh;
 var tt;
-tt:=1;
+tt:=1
 procedure hhh2;
 var tt2;
-tt2:=1+2*(3+4)-10/(1+4)
+tt2:=1+2*(3+4)-10/(1+4);
 procedure hhh3;
 const a=3,b=4;
-if a<b then a=a+b else b=a+b
+if a<b then a:=a+b else b:=a+b
 procedure hhh4;
 var a;
 while a<pi do
-a=a+1
+a:=a+1
 procedure hhh5;
-var a=1;
+var a;
 repeat
-a=a+1
+a:=a+1
 until a<pi
 procedure hhh6;
 read(a)
 procedure hhh7;
 write(a)
 procedure hhh8;
-call hhh7
+call hhh7;;;;;;;.

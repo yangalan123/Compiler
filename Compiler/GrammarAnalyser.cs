@@ -119,13 +119,14 @@ namespace Compiler
             if (sym_list[index][0]=="if")
             {
                 int backup = index;
+                index += 1;
                 bool flag = condition();
                 if (!flag)
                 {
                     error_message += "(if-condition)Building Condition Statement Failed at" + backup.ToString() + "\r\n";
                     return false;
                 }
-                if (sym_list[index][0]=="Then")
+                if (sym_list[index][0]=="then")
                 {
                     index += 1;
                     backup = index;
@@ -177,6 +178,7 @@ namespace Compiler
                 if (Relation_operator.Contains(sym_list[index][0]))
                 {
                     backup = index;
+                    index += 1;
                     flag = expr();
                     if (!flag)
                     {
@@ -288,8 +290,7 @@ namespace Compiler
             }
             if (term())
             {
-                if (index<sym_list.Count())
-                while (sym_list[index][0] == "+" || sym_list[index][0] == "-")
+                while (index < sym_list.Count() && sym_list[index][0] == "+" || sym_list[index][0] == "-")
                 {
                     index += 1;
                     bool flag = term();
@@ -326,6 +327,7 @@ namespace Compiler
             if (sym_list[index][0]=="while")
             {
                 int backup = index;
+                index += 1;
                 bool flag = condition();
                 if (!flag)
                 {
@@ -335,6 +337,7 @@ namespace Compiler
                 if (sym_list[index][0]=="do")
                 {
                     backup = index;
+                    index += 1;
                     flag = statement();
                     if (!flag)
                     {
@@ -355,6 +358,7 @@ namespace Compiler
                 index += 1;
                 if (sym_list[index][1]=="标识符")
                 {
+                    index += 1;
                     return true;
                 }
             }
@@ -396,6 +400,7 @@ namespace Compiler
             if (sym_list[index][0] == "repeat")
             {
                 int backup = index;
+                index += 1;
                 bool flag = statement();
                 if (!flag)
                 {
@@ -416,8 +421,8 @@ namespace Compiler
             }
             if (sym_list[index][0] == "until")
             {
-                index += 1;
                 int backup = index;
+                index += 1;
                 bool flag = condition();
                 if (!flag)
                 {
@@ -435,6 +440,7 @@ namespace Compiler
                 index += 1;
                 if (sym_list[index][0]=="(")
                 {
+                    index += 1;
                     if (sym_list[index][1]=="标识符")
                     {
                         index += 1;
@@ -474,6 +480,7 @@ namespace Compiler
                 index += 1;
                 if (sym_list[index][0] == "(")
                 {
+                    index += 1;
                     if (sym_list[index][1] == "标识符")
                     {
                         index += 1;
@@ -601,7 +608,7 @@ namespace Compiler
             return false;
         }
         bool program()
-        {
+              {
             try
             {
                 bool flag = true;
