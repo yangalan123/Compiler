@@ -13,7 +13,7 @@ namespace Compiler
         HashSet<String> Relation_operator = new HashSet<string>(new string[] { "<>","<=",">=","<",">","="});
         HashSet<String> state_header = new HashSet<string>(new string[] { "if", "while" ,"call","repeat","begin","read","write"});
         int index = 0;
-        void init()
+        public void init()
         {
             error_message="";
             index = 0;
@@ -33,7 +33,7 @@ namespace Compiler
                     }
                 }
             }
-            error_message = "Error in a single constant declaration statement:" + index.ToString() + "\r\n";
+            error_message += "Error in a single constant declaration statement:" + index.ToString() + "\r\n";
             return false;
         }
         bool const_declaration_part()
@@ -57,7 +57,7 @@ namespace Compiler
                         {
                             flag = const_declaration_atom();
                             if (!flag) return false;
-                            index += 1;
+                            //index += 1;
                         }
                     
                 }
@@ -78,7 +78,7 @@ namespace Compiler
                         index += 1;
                         if (sym_list[index][1]!="标识符")
                         {
-                            error_message = "Wrong Variable Declaraion in" + index.ToString() + "\r\n";
+                            error_message += "Wrong Variable Declaraion in" + index.ToString() + "\r\n";
                             return false;
                         }
                         index += 1;
@@ -91,7 +91,7 @@ namespace Compiler
                 }
                 else
                 {
-                    error_message = "Wrong Variable Declaraion in" + index.ToString() + "\r\n";
+                    error_message += "Wrong Variable Declaraion in" + index.ToString() + "\r\n";
                     return false;
                 }
             }
@@ -160,7 +160,7 @@ namespace Compiler
                 bool flag = expr();
                 if (!flag)
                 {
-                    error_message = "Failure occurred in building an expression in" + backup.ToString() + "\r\n";
+                    error_message += "Failure occurred in building an expression in" + backup.ToString() + "\r\n";
                     return false;
                 }
                 return true;
@@ -171,7 +171,7 @@ namespace Compiler
                 bool flag = expr();
                 if (!flag)
                 {
-                    error_message = "Failure occurred in building an expression in" + backup.ToString() + "\r\n";
+                    error_message += "Failure occurred in building an expression in" + backup.ToString() + "\r\n";
                     return false;
                 }
                 if (Relation_operator.Contains(sym_list[index][0]))
@@ -180,7 +180,7 @@ namespace Compiler
                     flag = expr();
                     if (!flag)
                     {
-                        error_message = "Failure occurred in building an expression in" + backup.ToString() + "\r\n";
+                        error_message += "Failure occurred in building an expression in" + backup.ToString() + "\r\n";
                         return false;
                     }
                     return true;
@@ -193,7 +193,7 @@ namespace Compiler
             bool flag = procedure_header();
             if (!flag)
             {
-                error_message = "Error in procedure header in" + index.ToString() + "\r\n";
+                error_message += "Error in procedure header in" + index.ToString() + "\r\n";
                 return false;
             }
             flag = program();
@@ -202,13 +202,14 @@ namespace Compiler
                 error_message += "Failed in parsing procedure declaration in " + index.ToString() + "\r\n";
                 return false;
             }
-            while (sym_list[index][0]!=";" && (flag=procedure_declaration_part()))
+            if (index<sym_list.Count())
+            while (sym_list[index][0]!=";"&& sym_list[index][0]=="procedure" && (flag=procedure_declaration_part()))
             {
             }
-            error_message = "";
-            if (sym_list[index][0]!=";")
+            error_message += "";
+            if (index >= sym_list.Count || sym_list[index][0]!=";")
             {
-                error_message = "missing ';' at the end of procedure declaration in " + index.ToString() + "\r\n";
+                error_message += "missing ';' at the end of procedure declaration in " + index.ToString() + "\r\n";
                 return false;
             }
             index += 1;
@@ -233,10 +234,10 @@ namespace Compiler
                 bool flag = expr();
                 if (!flag)
                 {
-                    error_message = "Failure occurred in building an expression in" + backup.ToString() + "\r\n";
+                    error_message += "Failure occurred in building an expression in" + backup.ToString() + "\r\n";
                     return false;
                 }
-                index += 1;
+                //index += 1;
                 if (sym_list[index][0]==")")
                 {
                     index += 1;
@@ -244,7 +245,7 @@ namespace Compiler
                 }
                 else
                 {
-                    error_message = "Missing ')' in building a factor in " + index.ToString() + "\r\n";
+                    error_message += "Missing ')' in building a factor in " + index.ToString() + "\r\n";
                     return false;
                 }
             }
@@ -259,23 +260,24 @@ namespace Compiler
                 error_message += "Failure occurred in building term at" + backup.ToString() + "\r\n";
                 return false;
             }
-            else
+            else if (index < sym_list.Count)
             {
-                while (sym_list[index][0] == "*" || sym_list[index][1] == "/")
+                while (sym_list[index][0] == "*" || sym_list[index][0] == "/")
                 {
                     index += 1;
                     backup = index;
                     flag = factor();
                     if (!flag)
                     {
-                        error_message = "Failure occurred in building a term in" + backup.ToString() + "\r\n";
+                        error_message += "Failure occurred in building a term in" + backup.ToString() + "\r\n";
                         return false;
                     }
-                    index += 1;
+                    //index += 1;
                 }
                 //have increased index by 1
                 return true;
             }
+            else return true;
             //return false;
         }
         bool expr()
@@ -286,16 +288,17 @@ namespace Compiler
             }
             if (term())
             {
-                while (sym_list[index][0] == "+" || sym_list[index][1] == "-")
+                if (index<sym_list.Count())
+                while (sym_list[index][0] == "+" || sym_list[index][0] == "-")
                 {
                     index += 1;
                     bool flag = term();
                     if (!flag)
                     {
-                        error_message = "Failure occurred in building an expression in" + index.ToString() + "\r\n";
+                        error_message += "Failure occurred in building an expression in" + index.ToString() + "\r\n";
                         return false;
                     }
-                    index += 1;
+                    //index += 1;
                 }
                 //have increased index by 1
                 return true;
@@ -311,9 +314,10 @@ namespace Compiler
                 {
                     index += 1;
                     bool flag = expr();
-                    if (flag) index += 1;
+                    //if (flag) index += 1;
                     return flag;
                 }
+                error_message += "Missing assign symbol at" + index.ToString() + "\r\n";
             }
             return false;
         }
@@ -365,7 +369,7 @@ namespace Compiler
                 bool flag = statement();
                 if (!flag)
                 {
-                    error_message = "Building block statement failed at " + index.ToString() + "\r\n";
+                    error_message += "Building block statement failed at " + index.ToString() + "\r\n";
                     return false;
                 }
                 while (sym_list[index][0]==";")
@@ -375,7 +379,7 @@ namespace Compiler
                     flag = statement();
                     if (!flag)
                     {
-                        error_message = "Building block statement failed at " + index.ToString() + "\r\n";
+                        error_message += "Building block statement failed at " + index.ToString() + "\r\n";
                         return false;
                     }
                 }
@@ -395,7 +399,7 @@ namespace Compiler
                 bool flag = statement();
                 if (!flag)
                 {
-                    error_message = "Building repeat statement failed at " + backup.ToString() + "\r\n";
+                    error_message += "Building repeat statement failed at " + backup.ToString() + "\r\n";
                     return false;
                 }
                 while (sym_list[index][0] == ";")
@@ -405,7 +409,7 @@ namespace Compiler
                     flag = statement();
                     if (!flag)
                     {
-                        error_message = "Building repeat statement failed at " + backup.ToString() + "\r\n";
+                        error_message += "Building repeat statement failed at " + backup.ToString() + "\r\n";
                         return false;
                     }
                 }
@@ -619,16 +623,15 @@ namespace Compiler
                 }
                 flag = statement();
                 //if (!flag) return false;
-                flag = checkend();
-                if (!flag) return false;
+                
                 if (index == sym_list.Count() - 1) return true;
                 return true;
             }
             catch(Exception e)
             {
-                if (e is IndexOutOfRangeException)
+                if (e is IndexOutOfRangeException || e is ArgumentOutOfRangeException)
                 {
-                    error_message = "Incomplete Program, Checking at" + index.ToString() + "\r\n";
+                    error_message += "Incomplete subProgram, Checking at" + index.ToString() + "\r\n";
                     return false;
                 }
                 else
@@ -641,7 +644,7 @@ namespace Compiler
         }
         bool checkend()
         {
-            if (sym_list[index][0]==".")
+            if (index<sym_list.Count() && sym_list[index][0]==".")
             {
                 index += 1;
                 return true;
@@ -652,6 +655,17 @@ namespace Compiler
         public String parse(List<List<String>> sym_list)
         {
             this.sym_list = sym_list;
+            bool flag = program();
+            if (!flag)
+            {
+                Console.WriteLine(error_message);
+            }
+            flag = checkend();
+            if (!flag) error_message += "Incomplete Program, Checking at" + index.ToString()+"\r\n";
+            if (!flag)
+            {
+                Console.WriteLine(error_message);
+            }
             return error_message;
         }
     }

@@ -131,11 +131,11 @@ namespace Compiler
                                 try
                                 {
                                     long num = long.Parse(token.ToString());
-                                    result.Add(newItem(token.ToString(), "无符号整数常数", Convert.ToString(num, 2)));
+                                    result.Add(newItem(token.ToString(), "无符号整数", Convert.ToString(num, 2)));
                                 }
                                 catch
                                 {
-                                    result.Add(newItem(token.ToString(), "无符号整数常数", "数值超过long范围"));
+                                    result.Add(newItem(token.ToString(), "无符号整数", "数值超过long范围"));
                                     return;
                                 }
                                 retract();
@@ -167,11 +167,11 @@ namespace Compiler
                             try
                             {
                                 long num = long.Parse(token.ToString());
-                                result.Add(newItem(token.ToString(), "无符号整数常数", Convert.ToString(num,2)));
+                                result.Add(newItem(token.ToString(), "无符号整数", Convert.ToString(num,2)));
                             }
                             catch
                             {
-                                result.Add(newItem(token.ToString(), "无符号整数常数", "数值超过long范围"));
+                                result.Add(newItem(token.ToString(), "无符号整数", "数值超过long范围"));
                                 return;
                             }
                             

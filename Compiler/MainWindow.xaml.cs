@@ -18,6 +18,7 @@ namespace Compiler
         String InputFileName = "";
         String OutputFileName = "";
         PL0LexParser parser = new PL0LexParser();
+        GrammarAnalyser GAparser = new GrammarAnalyser();
         String outputdir = "";
         public MainWindow()
         {
@@ -54,6 +55,9 @@ namespace Compiler
                 text = File.ReadAllText(InputFileName);
             List<List<string>> result = this.parser.parse(text);
             File.WriteAllText(OutputFileName, output(result));
+            GAparser.init();
+            var error = GAparser.parse(result);
+            File.AppendAllText(OutputFileName,error);
             Process.Start("explorer.exe", @outputdir);
         }
 
