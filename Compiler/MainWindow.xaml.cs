@@ -29,7 +29,7 @@ namespace Compiler
             StringBuilder sb = new StringBuilder();
             foreach (List<string> item in tuples)
             {
-                sb.Append(item[0] +"\t"+ item[1] +"\t"+ item[2]+"\n");
+                sb.Append(item[0] +"\t"+ item[1] +"\t"+ item[2]+"\t"+item[3]+"\n");
             }
             return sb.ToString();
 
@@ -58,7 +58,7 @@ namespace Compiler
             GAparser.init();
             var error = GAparser.parse(result);
             File.AppendAllText(OutputFileName,error);
-            Process.Start("explorer.exe", @outputdir);
+            //Process.Start("explorer.exe", @outputdir);
         }
 
         private void Button_Click_1(object sender, RoutedEventArgs e)//button for 'selecting input file'

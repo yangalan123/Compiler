@@ -18,17 +18,19 @@ namespace Compiler
             private int index = 0;
             private int length = 0;
             private int num_lines = 0;
+            bool newline = false;
             HashSet<string> BOUNDSYM = new HashSet<string>(new string[] { ";", ",", "(", ")" ,"."});
             HashSet<string> OPERATORS = new HashSet<string>(new string[] { "+", "-", "*", "/", ":=", "=", "<>", "<=", ">=", "<", ">" });
-            HashSet<string> KEYWORDS = new HashSet<string>(new string[] { "const", "var", "procedure", "if", "then", "while", "do", "begin", "end", "call", "read", "repeat", "until", "read", "write" ,"odd"});
+            HashSet<string> KEYWORDS = new HashSet<string>(new string[] { "const", "var", "procedure", "if", "then", "while", "do", "begin", "end", "call", "read", "repeat", "until", "read", "write" ,"odd","else"});
             List<List<string>> result = new List<List<string>>(); 
             public void init()
             {
                 result = new List<List<string>>();
                 index = 0;
                 length = 0;
-                num_lines = 0;
+                num_lines = 1;
                 programstr = null;
+                newline = false;
             }
             public List<List<string>> parse(string text)
             {
@@ -57,7 +59,7 @@ namespace Compiler
             {
                 if (x == '\n' || x == '\r' || x == '\t' || x == ' ')
                 {
-                    if (x=='\n' || x=='\r')
+                    if (x=='\n' )
                     {
                         num_lines += 1;
                     }
