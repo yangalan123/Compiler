@@ -279,7 +279,6 @@ namespace Compiler
             index += 1;
             return true;
         }
-        这个数太大
         bool factor()
         {
             if (sym_list[index][1]=="标识符")
