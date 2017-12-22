@@ -12,7 +12,7 @@ namespace Compiler
         List<List<String>> symbol_table, symbol_table_stack;
         List<List<String>> backup_symbol_table, backup_symbol_table_stack;
         List<int> subprogram_index_table;
-        long id = 0,layer = 0;
+        long id = 0,block_num = 0;
         List<List<String>> sym_list;
         HashSet<String> Follow_Statement = new HashSet<string>(new string[] { ".",";","end"});
         HashSet<String> Follow_Operators = new HashSet<string>(new string[] { "+","-","*","/",";","."});
@@ -28,7 +28,7 @@ namespace Compiler
             symbol_table = new List<List<string>>();
             symbol_table_stack = new List<List<string>>();
             id = 0;
-            layer = 0;
+            block_num = 0;
         }
         void backup()
         {
