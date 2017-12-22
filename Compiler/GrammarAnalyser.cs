@@ -9,6 +9,10 @@ namespace Compiler
     class GrammarAnalyser
     {
         String error_message;
+        List<List<String>> symbol_table, symbol_table_stack;
+        List<List<String>> backup_symbol_table, backup_symbol_table_stack;
+        List<int> subprogram_index_table;
+        long id = 0,layer = 0;
         List<List<String>> sym_list;
         HashSet<String> Follow_Statement = new HashSet<string>(new string[] { ".",";","end"});
         HashSet<String> Follow_Operators = new HashSet<string>(new string[] { "+","-","*","/",";","."});
@@ -21,6 +25,10 @@ namespace Compiler
         {
             error_message="";
             index = 0;
+            symbol_table = new List<List<string>>();
+            symbol_table_stack = new List<List<string>>();
+            id = 0;
+            layer = 0;
         }
         void backup()
         {
@@ -316,7 +324,12 @@ namespace Compiler
                 }
             }
             else
+            {
+                //if (sym_list[index][0]=="")
+                //error_message += "(Error Code 21)表达式中不可有过程标识符()"
                 error_message += "(Error Code 37)无效的因子开头(line: " + sym_list[index][3] + ")\r\n";
+            }
+                
             return false;
         }
         bool term()
