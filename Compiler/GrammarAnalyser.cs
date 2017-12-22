@@ -10,13 +10,27 @@ namespace Compiler
     {
         String error_message;
         List<List<String>> sym_list;
+        HashSet<String> Follow_Statement = new HashSet<string>(new string[] { ".",";","end"});
+        HashSet<String> Follow_Operators = new HashSet<string>(new string[] { "+","-","*","/",";","."});
         HashSet<String> Relation_operator = new HashSet<string>(new string[] { "<>","<=",">=","<",">","="});
         HashSet<String> state_header = new HashSet<string>(new string[] { "if", "while" ,"call","repeat","begin","read","write"});
         int index = 0;
+        int ga_backup_index;
+        StringBuilder ga_backup_error_message;
         public void init()
         {
             error_message="";
             index = 0;
+        }
+        void backup()
+        {
+            ga_backup_index = index;
+            ga_backup_error_message = new StringBuilder(error_message);
+        }
+        void restore()
+        {
+            index = ga_backup_index;
+            error_message = ga_backup_error_message.ToString();
         }
         bool const_declaration_atom()
         {
@@ -29,16 +43,18 @@ namespace Compiler
                     if (sym_list[index][1] == "无符号整数")
                     {
                         if (sym_list[index][2] == "数值超过long范围")
-                            error_message += "(Error Code 30) 这个数太大 (line:"+sym_list[index][3]+")\r\n";
+                            error_message += "(Error Code 30)这个数太大(line:" + sym_list[index][3] + ")\r\n";
                         index += 1;
-                        
+
                         return true;
                     }
                     else
                         error_message += "(Error Code 2) =号后应为数(line:" + sym_list[index][3] + ")\r\n";
                 }
                 else if (sym_list[index][0] == ":=")
-                    error_message += "(Error Code 1) 应为=而不是:= (line:"+sym_list[index][3]+")\r\n";
+                    error_message += "(Error Code 1) 应为=而不是:= (line:" + sym_list[index][3] + ")\r\n";
+                else
+                    error_message += "(Error Code 3) 标识符后应为=(line:" + sym_list[index][3] + ")\r\n";
             }
             else
                 error_message += "(Error Code 4) const,var,procedure之后应为标识符(line:" + sym_list[index][3] + ")\r\n";
@@ -101,7 +117,7 @@ namespace Compiler
                         return true;
                     }
                     else
-                        error_message += "(Error Code 5) 缺少逗号或分号 (line:"+sym_list[index][3]+")\r\n";
+                        error_message += "(Error Code 5) 漏掉逗号或分号 (line:"+sym_list[index][3]+")\r\n";
                 }
                 else
                 {
@@ -125,7 +141,7 @@ namespace Compiler
                         return true;
                     }
                     else
-                        error_message += "(Error Code 5) 缺少逗号或分号 (line:" + sym_list[index][3] + ")\r\n";
+                        error_message += "(Error Code 5) 漏掉逗号或分号 (line:" + sym_list[index][3] + ")\r\n";
 
                 }
                 else
@@ -216,6 +232,8 @@ namespace Compiler
                 }
                 else
                 {
+                    if (sym_list[index][0]==":=")
+                        error_message += "(Error Code 1) 应为=而不是:= (line:" + sym_list[index][3] + ")\r\n";
                     error_message += "(Error Code 20)应为关系运算符(line:"+sym_list[index][3]+")\r\n";
                     return false;
                 }
@@ -254,12 +272,14 @@ namespace Compiler
             //error_message += "";
             if (index >= sym_list.Count || sym_list[index][0]!=";")
             {
-                error_message += "(Error Code 5) 缺少逗号或分号 (line:" + sym_list[index][3] + ")\r\n";
+                error_message += "(Error Code 5) 漏掉逗号或分号 (line:" + sym_list[index][3] + ")\r\n";
+                error_message += "(Error Code 6) 过程说明后的符号不正确(line:"+sym_list[index][3]+")\r\n";
                 return false;
             }
             index += 1;
             return true;
         }
+        这个数太大
         bool factor()
         {
             if (sym_list[index][1]=="标识符")
@@ -269,6 +289,8 @@ namespace Compiler
             }
             else if (sym_list[index][1] == "无符号整数")
             {
+                if (sym_list[index][2] == "数值超过long范围")
+                    error_message += "(Error Code 30)这个数太大(line:" + sym_list[index][3] + ")\r\n";
                 index += 1;
                 return true;
             }
@@ -290,18 +312,18 @@ namespace Compiler
                 }
                 else
                 {
-                    error_message += "(Error Code 22)缺少右括号(line: " + sym_list[index][3] + ")\r\n";
+                    error_message += "(Error Code 22)漏右括号(line: " + sym_list[index][3] + ")\r\n";
                     return false;
                 }
             }
             else
-                error_message += "(Error Code 31)无效的因子开头(line: " + sym_list[index][3] + ")\r\n";
+                error_message += "(Error Code 37)无效的因子开头(line: " + sym_list[index][3] + ")\r\n";
             return false;
         }
         bool term()
         {
-            bool flag = factor();
             int backup = index;
+            bool flag = factor();
             if (!flag)
             {
                 error_message += "(Error Code 31)项定义错误(line:" + sym_list[backup][3] + ")\r\n";
@@ -309,6 +331,8 @@ namespace Compiler
             }
             else if (index < sym_list.Count)
             {
+                if (!Follow_Operators.Contains(sym_list[index][0]) || !Relation_operator.Contains(sym_list[index][0]))
+                    error_message += "(Error Code 23)因子后不可为此符号("+sym_list[index][0]+")(line:"+sym_list[index][3]+")\r\n";
                 while (sym_list[index][0] == "*" || sym_list[index][0] == "/")
                 {
                     index += 1;
@@ -338,6 +362,7 @@ namespace Compiler
             int backup = index;
             if (term())
             {
+                first = true;
                 while (index < sym_list.Count() && sym_list[index][0] == "+" || sym_list[index][0] == "-")
                 {
                     index += 1;
@@ -354,7 +379,7 @@ namespace Compiler
             }
             else
             {
-                if (first)
+                if (!first)
                 {
                     error_message += "(Error Code 24)表达式不能以此开头(line: " + sym_list[backup][3] + ")\r\n";
                 }
@@ -520,7 +545,7 @@ namespace Compiler
                             index += 1;
                             if(sym_list[index][1]!="标识符")
                             {
-                                error_message += "Illegal Read Parameters at" + sym_list[index][3] + "\r\n";
+                                error_message += "(Error Code 36)应为标识符(line:" + sym_list[index][3] + ")\r\n";
                                 return false;
                             }
                             index += 1;
@@ -532,15 +557,19 @@ namespace Compiler
                         }
                         else
                         {
-                            error_message += "Missing ( in building read statement at" + sym_list[index][3]+"\r\n";
+                            error_message += "(Error Code 22)漏右括号(line: " + sym_list[index][3] + ")\r\n";
                             return false;
                         }
                     }
                     else
                     {
-                        error_message += "(first symbol after ( )Building Read Statement Failed at" + sym_list[index][3] + "\r\n";
+                        error_message += "(Error Code 36)应为标识符(line:" + sym_list[index][3] + ")\r\n";
                         return false;
                     }
+                }
+                else
+                {
+                    error_message += "(Error Code 40)应为左括号(line:" + sym_list[index][3] + ")\r\n";
                 }
             }
             return false;
@@ -561,7 +590,7 @@ namespace Compiler
                             index += 1;
                             if (sym_list[index][1] != "标识符")
                             {
-                                error_message += "Illegal Read Parameters at" + sym_list[index][3] + "\r\n";
+                                error_message += "(Error Code 36)应为标识符(line:" + sym_list[index][3] + ")\r\n";
                                 return false;
                             }
                             index += 1;
@@ -573,15 +602,19 @@ namespace Compiler
                         }
                         else
                         {
-                            error_message += "Missing ( in building read statement at" + sym_list[index][3] + "\r\n";
+                            error_message += "(Error Code 22)漏右括号(line: " + sym_list[index][3] + ")\r\n";
                             return false;
                         }
                     }
                     else
                     {
-                        error_message += "(first symbol after ( )Building Read Statement Failed at" + sym_list[index][3] + "\r\n";
+                        error_message += "(Error Code 36)应为标识符(line:" + sym_list[index][3] + ")\r\n";
                         return false;
                     }
+                }
+                else
+                {
+                    error_message += "(Error Code 40)应为左括号(line:" + sym_list[index][3] + ")\r\n";
                 }
             }
             return false;
@@ -596,9 +629,11 @@ namespace Compiler
                 bool flag = assign_statement();
                 if (!flag)
                 {
-                    error_message += "build assign statement failed at" + sym_list[backup][3] + "\r\n";
+                    error_message += "赋值语句不规范(line:" + sym_list[backup][3] + ")\r\n";
                     return false;
                 }
+                if (!Follow_Statement.Contains(sym_list[index][0]))
+                    error_message += "(Error Code 8)程序体内语句部分后的符号不正确(line:" + sym_list[index][3] + ")\r\n"+ "(Error Code 19)语句后的符号不正确(line:" + sym_list[index][3] + ")\r\n";
                 return true;
             }
             else if (sym_list[index][0]=="if")
@@ -607,9 +642,11 @@ namespace Compiler
                 bool flag = condition_statement();
                 if (!flag)
                 {
-                    error_message += "build condition statement failed at" + sym_list[backup][3] + "\r\n";
+                    error_message += "选择语句不规范(line:" + sym_list[backup][3] + ")\r\n";
                     return false;
                 }
+                if (!Follow_Statement.Contains(sym_list[index][0]))
+                    error_message += "(Error Code 8)程序体内语句部分后的符号不正确(line:" + sym_list[index][3] + ")\r\n"+ "(Error Code 19)语句后的符号不正确(line:" + sym_list[index][3] + ")\r\n";
                 return true;
             }
             else if (sym_list[index][0] == "while")
@@ -618,9 +655,11 @@ namespace Compiler
                 bool flag = while_loop_statement();
                 if (!flag)
                 {
-                    error_message += "build while_loop statement failed at" + sym_list[backup][3] + "\r\n";
+                    error_message += "当型循环语句不规范(line:" + sym_list[backup][3] + ")\r\n";
                     return false;
                 }
+                if (!Follow_Statement.Contains(sym_list[index][0]))
+                    error_message += "(Error Code 8)程序体内语句部分后的符号不正确(line:" + sym_list[index][3] + ")\r\n"+ "(Error Code 19)语句后的符号不正确(line:" + sym_list[index][3] + ")\r\n";
                 return true;
             }
             else if (sym_list[index][0] == "repeat")
@@ -629,9 +668,11 @@ namespace Compiler
                 bool flag = repeat_statement();
                 if (!flag)
                 {
-                    error_message += "build repeat statement failed at" + sym_list[backup][3] + "\r\n";
+                    error_message += "repeat循环语句不规范(line:" + sym_list[backup][3] + ")\r\n";
                     return false;
                 }
+                if (!Follow_Statement.Contains(sym_list[index][0]))
+                    error_message += "(Error Code 8)程序体内语句部分后的符号不正确(line:" + sym_list[index][3] + ")\r\n"+ "(Error Code 19)语句后的符号不正确(line:" + sym_list[index][3] + ")\r\n";
                 return true;
             }
             else if (sym_list[index][0] == "begin")
@@ -640,9 +681,11 @@ namespace Compiler
                 bool flag = block_statement();
                 if (!flag)
                 {
-                    error_message += "build block statement failed at" + sym_list[backup][3] + "\r\n";
+                    error_message += "复合语句不规范(line:" + sym_list[backup][3] + ")\r\n";
                     return false;
                 }
+                if (!Follow_Statement.Contains(sym_list[index][0]))
+                    error_message += "(Error Code 8)程序体内语句部分后的符号不正确(line:" + sym_list[index][3] + ")\r\n"+ "(Error Code 19)语句后的符号不正确(line:" + sym_list[index][3] + ")\r\n";
                 return true;
             }
             else if (sym_list[index][0] == "call")
@@ -651,9 +694,11 @@ namespace Compiler
                 bool flag = call_statement();
                 if (!flag)
                 {
-                    error_message += "build call statement failed at" + sym_list[backup][3] + "\r\n";
+                    error_message += "过程调用语句不规范(line:" + sym_list[backup][3] + ")\r\n";
                     return false;
                 }
+                if (!Follow_Statement.Contains(sym_list[index][0]))
+                    error_message += "(Error Code 8)程序体内语句部分后的符号不正确(line:" + sym_list[index][3] + ")\r\n"+ "(Error Code 19)语句后的符号不正确(line:" + sym_list[index][3] + ")\r\n";
                 return true;
             }
             else if (sym_list[index][0] == "read")
@@ -662,9 +707,11 @@ namespace Compiler
                 bool flag = read_statement();
                 if (!flag)
                 {
-                    error_message += "build read statement failed at" + sym_list[backup][3] + "\r\n";
+                    error_message += "读语句不规范(line:" + sym_list[backup][3] + ")\r\n";
                     return false;
                 }
+                if (!Follow_Statement.Contains(sym_list[index][0]))
+                    error_message += "(Error Code 8)程序体内语句部分后的符号不正确(line:" + sym_list[index][3] + ")\r\n"+ "(Error Code 19)语句后的符号不正确(line:" + sym_list[index][3] + ")\r\n";
                 return true;
             }
             else if (sym_list[index][0] == "write")
@@ -673,15 +720,17 @@ namespace Compiler
                 bool flag = write_statement();
                 if (!flag)
                 {
-                    error_message += "build write statement failed at" + sym_list[backup][3] + "\r\n";
+                    error_message += "写语句不规范(line:" + sym_list[backup][3] + ")\r\n";
                     return false;
                 }
+                if (!Follow_Statement.Contains(sym_list[index][0]))
+                    error_message += "(Error Code 8)程序体内语句部分后的符号不正确(line:" + sym_list[index][3] + ")\r\n"+ "(Error Code 19)语句后的符号不正确(line:" + sym_list[index][3] + ")\r\n";
                 return true;
             }
             return false;
         }
         bool program()
-              {
+        {
             try
             {
                 bool flag = true;
@@ -736,12 +785,13 @@ namespace Compiler
         {
             this.sym_list = sym_list;
             bool flag = program();
-            if (!flag)
+           /* if (!flag)
             {
                 Console.WriteLine(error_message);
-            }
+            }*/
+            int backup = index;
             flag = checkend();
-            if (!flag) error_message += "Incomplete Program, Checking at" + sym_list[index][3]+"\r\n";
+            if (!flag) error_message += "(Error Code 9)应为句号" + sym_list[backup][3]+"\r\n";
             if (!flag)
             {
                 Console.WriteLine(error_message);
