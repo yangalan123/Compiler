@@ -296,7 +296,7 @@ namespace Compiler
                 procedure_stack.RemoveAt(procedure_stack.Count - 1);
                 return false;
             }
-            if (index<sym_list.Count())
+            /*if (index<sym_list.Count())
             while (sym_list[index][0]==";" )
             {
                     if (index >= sym_list.Count || sym_list[index + 1][0] != "procedure")
@@ -311,19 +311,30 @@ namespace Compiler
                         error_message = sb.ToString();
                         break;
                     }
-            }
+            }*/
             //error_message += "";
             if (index >= sym_list.Count || sym_list[index][0]!=";")
             {
-                error_message += "(Error Code 5) 漏掉逗号或分号 (line:" + sym_list[index][3] + ")\r\n";
-                error_message += "(Error Code 6) 过程说明后的符号不正确(line:"+sym_list[index][3]+")\r\n";
-               
+                if (index >= sym_list.Count)
+                {
+                    error_message += "(Error Code 6)过程说明后的符号''不正确(line:" + sym_list[index - 1][3] + ")\r\n";
+                    //return false;
+                }
+                else
+                {
+                    error_message += "(Error Code 5)漏掉逗号或分号(line:" + sym_list[index][3] + ")\r\n";
+                    error_message += "(Error Code 6)过程说明后的符号" + sym_list[index][0] + "不正确(line:" + sym_list[index][3] + ")\r\n";
+                }
                 procedure_stack.RemoveAt(procedure_stack.Count - 1);
                 return false;
             }
             index += 1;
             //int len = procedure_stack.Count;
             procedure_stack.RemoveAt(procedure_stack.Count - 1);
+            if (index >= sym_list.Count || sym_list[index][0] != "procedure")
+                return true;
+            if (index < sym_list.Count && sym_list[index][0] == "procedure")
+                return procedure_declaration_part();
             return true;
         }
         bool factor()
@@ -691,7 +702,7 @@ namespace Compiler
                     return false;
                 }
                 if (!Follow_Statement.Contains(sym_list[index][0]))
-                    error_message += "(Error Code 8)程序体内语句部分后的符号" + sym_list[index][0] + "不正确(line:" + sym_list[index][3] + ")\r\n" + "(Error Code 19)语句后的符号不正确(line:" + sym_list[index][3] + ")\r\n";
+                    error_message += "(Error Code 8)程序体内语句部分后的符号" + sym_list[index][0] + "不正确(line:" + sym_list[index][3] + ")\r\n" + "(Error Code 19)语句后的符号"+ sym_list[index][0]+"不正确(line:" + sym_list[index][3] + ")\r\n";
                 if (state_header.Contains(sym_list[index][0]) || sym_list[index][1] == "标识符")
                     error_message += "(Error Code 10)语句之间漏分号(line:"+sym_list[index][3]+")\r\n";
                 return true;
@@ -706,7 +717,7 @@ namespace Compiler
                     return false;
                 }
                 if (!Follow_Statement.Contains(sym_list[index][0]))
-                    error_message += "(Error Code 8)程序体内语句部分后的符号"+sym_list[index][0]+"不正确(line:" + sym_list[index][3] + ")\r\n"+ "(Error Code 19)语句后的符号不正确(line:" + sym_list[index][3] + ")\r\n";
+                    error_message += "(Error Code 8)程序体内语句部分后的符号"+sym_list[index][0]+"不正确(line:" + sym_list[index][3] + ")\r\n"+ "(Error Code 19)语句后的符号" + sym_list[index][0] + "不正确(line:" + sym_list[index][3] + ")\r\n";
                 if (state_header.Contains(sym_list[index][0]) || sym_list[index][1] == "标识符")
                     error_message += "(Error Code 10)语句之间漏分号(line:" + sym_list[index][3] + ")\r\n";
                 return true;
@@ -721,7 +732,7 @@ namespace Compiler
                     return false;
                 }
                 if (!Follow_Statement.Contains(sym_list[index][0]))
-                    error_message += "(Error Code 8)程序体内语句部分后的符号" + sym_list[index][0] + "不正确(line:" + sym_list[index][3] + ")\r\n" + "(Error Code 19)语句后的符号不正确(line:" + sym_list[index][3] + ")\r\n";
+                    error_message += "(Error Code 8)程序体内语句部分后的符号" + sym_list[index][0] + "不正确(line:" + sym_list[index][3] + ")\r\n" + "(Error Code 19)语句后的符号" + sym_list[index][0] + "不正确(line:" + sym_list[index][3] + ")\r\n";
                 if (state_header.Contains(sym_list[index][0]) || sym_list[index][1] == "标识符")
                     error_message += "(Error Code 10)语句之间漏分号(line:" + sym_list[index][3] + ")\r\n";
                 return true;
@@ -736,7 +747,7 @@ namespace Compiler
                     return false;
                 }
                 if (!Follow_Statement.Contains(sym_list[index][0]))
-                    error_message += "(Error Code 8)程序体内语句部分后的符号" + sym_list[index][0] + "不正确(line:" + sym_list[index][3] + ")\r\n" + "(Error Code 19)语句后的符号不正确(line:" + sym_list[index][3] + ")\r\n";
+                    error_message += "(Error Code 8)程序体内语句部分后的符号" + sym_list[index][0] + "不正确(line:" + sym_list[index][3] + ")\r\n" + "(Error Code 19)语句后的符号" + sym_list[index][0] + "不正确(line:" + sym_list[index][3] + ")\r\n";
                 if (state_header.Contains(sym_list[index][0]) || sym_list[index][1] == "标识符")
                     error_message += "(Error Code 10)语句之间漏分号(line:" + sym_list[index][3] + ")\r\n";
                 return true;
@@ -751,7 +762,7 @@ namespace Compiler
                     return false;
                 }
                 if (!Follow_Statement.Contains(sym_list[index][0]))
-                    error_message += "(Error Code 8)程序体内语句部分后的符号" + sym_list[index][0] + "不正确(line:" + sym_list[index][3] + ")\r\n" + "(Error Code 19)语句后的符号不正确(line:" + sym_list[index][3] + ")\r\n";
+                    error_message += "(Error Code 8)程序体内语句部分后的符号" + sym_list[index][0] + "不正确(line:" + sym_list[index][3] + ")\r\n" + "(Error Code 19)语句后的符号" + sym_list[index][0] + "不正确(line:" + sym_list[index][3] + ")\r\n";
                 if (state_header.Contains(sym_list[index][0]) || sym_list[index][1] == "标识符")
                     error_message += "(Error Code 10)语句之间漏分号(line:" + sym_list[index][3] + ")\r\n";
                 return true;
@@ -766,7 +777,7 @@ namespace Compiler
                     return false;
                 }
                 if (!Follow_Statement.Contains(sym_list[index][0]))
-                    error_message += "(Error Code 8)程序体内语句部分后的符号" + sym_list[index][0] + "不正确(line:" + sym_list[index][3] + ")\r\n" + "(Error Code 19)语句后的符号不正确(line:" + sym_list[index][3] + ")\r\n";
+                    error_message += "(Error Code 8)程序体内语句部分后的符号" + sym_list[index][0] + "不正确(line:" + sym_list[index][3] + ")\r\n" + "(Error Code 19)语句后的符号" + sym_list[index][0] + "不正确(line:" + sym_list[index][3] + ")\r\n";
                 if (state_header.Contains(sym_list[index][0]) || sym_list[index][1] == "标识符")
                     error_message += "(Error Code 10)语句之间漏分号(line:" + sym_list[index][3] + ")\r\n";
                 return true;
@@ -781,7 +792,7 @@ namespace Compiler
                     return false;
                 }
                 if (!Follow_Statement.Contains(sym_list[index][0]))
-                    error_message += "(Error Code 8)程序体内语句部分后的符号" + sym_list[index][0] + "不正确(line:" + sym_list[index][3] + ")\r\n" + "(Error Code 19)语句后的符号不正确(line:" + sym_list[index][3] + ")\r\n";
+                    error_message += "(Error Code 8)程序体内语句部分后的符号" + sym_list[index][0] + "不正确(line:" + sym_list[index][3] + ")\r\n" + "(Error Code 19)语句后的符号" + sym_list[index][0] + "不正确(line:" + sym_list[index][3] + ")\r\n";
                 if (state_header.Contains(sym_list[index][0]) || sym_list[index][1] == "标识符")
                     error_message += "(Error Code 10)语句之间漏分号(line:" + sym_list[index][3] + ")\r\n";
                 return true;
@@ -796,7 +807,7 @@ namespace Compiler
                     return false;
                 }
                 if (!Follow_Statement.Contains(sym_list[index][0]))
-                    error_message += "(Error Code 8)程序体内语句部分后的符号" + sym_list[index][0] + "不正确(line:" + sym_list[index][3] + ")\r\n" + "(Error Code 19)语句后的符号不正确(line:" + sym_list[index][3] + ")\r\n";
+                    error_message += "(Error Code 8)程序体内语句部分后的符号" + sym_list[index][0] + "不正确(line:" + sym_list[index][3] + ")\r\n" + "(Error Code 19)语句后的符号" + sym_list[index][0] + "不正确(line:" + sym_list[index][3] + ")\r\n";
                 if (state_header.Contains(sym_list[index][0]) || sym_list[index][1] == "标识符")
                     error_message += "(Error Code 10)语句之间漏分号(line:" + sym_list[index][3] + ")\r\n";
                 return true;
@@ -806,7 +817,7 @@ namespace Compiler
         string build_entry(string name,string variable_type,string value)
         {
             // res = "";
-            string res = name + "\r" + variable_type + "\r" + value;
+            string res = name + "\r" + variable_type + "\r" + value+"\r";
             return res;
         }
         bool add_to_symbol_table_stack(string entry)
@@ -819,10 +830,12 @@ namespace Compiler
                 if (old_one[0].Equals(new_one[0]))
                 {
                     //Console.WriteLine(old_one[0]+"\n"+new_one[0]);
-                    error_message += "(Error Code 38)标识符重定义(line: " + sym_list[index][3] + ")\r\n";
+                    error_message += "(Error Code 38)标识符"+new_one[0]+"重定义(line: " + sym_list[index][3] + ")\r\n";
                     return false;
                 }
             }
+            entry += id.ToString()+"\r";
+            id += 1;
             dict.Add(entry);
             return true;
         }
@@ -853,37 +866,27 @@ namespace Compiler
                     }
                     return -1;
                 }
-                var now_list = symbol_table_stack.Last();
-                foreach (var item in now_list)
+                int stack_count = symbol_table_stack.Count-1;
+                while (stack_count>=0)
                 {
-                    var old_one = item.Split('\r');
-                    if (old_one[0] == name && old_one[1] == "Constant" && type=="assign")
+                    var now_list = symbol_table_stack[stack_count];
+                    foreach (var item in now_list)
                     {
-                        error_message += "(Error Code 12)不可向常量或过程赋值(line:" + sym_list[index][3] + ")\r\n";
-                        return -1;
-                    }
-                    if (old_one[0]==name && old_one[1] != "Procedure")
-                    {
-                        return 0;
-                    }
-                    
-                }
-                now_list = symbol_table_stack.First();
-                foreach (var item in now_list)
-                {
-                    var old_one = item.Split('\r');
-                    if (old_one[0] == name && old_one[1] == "Constant" && type == "assign")
-                    {
-                        error_message += "(Error Code 12)不可向常量或过程赋值(line:" + sym_list[index][3] + ")\r\n";
-                        return -1;
-                    }
-                    if (old_one[0] == name && old_one[1] != "Procedure")
-                    {
-                        return 0;
-                    }
+                        var old_one = item.Split('\r');
+                        if (old_one[0] == name && old_one[1] == "Constant" && type == "assign")
+                        {
+                            error_message += "(Error Code 12)不可向常量或过程赋值(line:" + sym_list[index][3] + ")\r\n";
+                            return -1;
+                        }
+                        if (old_one[0] == name && old_one[1] != "Procedure")
+                        {
+                            return 0;
+                        }
 
+                    }
+                    stack_count--;
                 }
-                error_message += "(Error Code 11)标识符未说明(line:" + sym_list[index][3] + ")\r\n";
+                error_message += "(Error Code 11)标识符"+name+"未说明(line:" + sym_list[index][3] + ")\r\n";
                 return -1;
                 
 

@@ -1,0 +1,25 @@
+procedure gcd;
+   var f,g;
+   begin
+      f:=x;
+      g:=y
+      while f<>g do
+         begin
+              if f<g then g:=g-f;
+              if g<f then g:=f-g;
+              z:=f
+          end;
+      begin
+	x:=m;
+	y:=n;
+	call multiply;
+	x:=25;
+	y:=3;
+	call divide;
+	x:=84;
+	y:=36;
+	call gcd;
+	call x;
+	x:=gcd;
+	gcd=x
+	end.
