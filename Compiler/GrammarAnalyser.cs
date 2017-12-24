@@ -12,11 +12,12 @@ namespace Compiler
         //OPR  10-geq,11-gtr,12-leq
         String error_message;
         List<List<String>> symbol_table, symbol_table_stack;
+        List<string> codes;
         //List<List<String>> backup_symbol_table, backup_symbol_table_stack;
         List<int> subprogram_index_table;
         List<string>procedure_stack;
         Dictionary<int, List<string>> procedure_pcode_list;
-        Dictionary<int, int> procedure_table;
+        Dictionary<int, int> procedure_table,dx_table;
         //Array<string> pcode;
         int id = 0,now_ptr=0;
         List<List<String>> sym_list;
@@ -39,8 +40,10 @@ namespace Compiler
             now_ptr = 0;
             subprogram_index_table = new List<int>();
             procedure_stack = new List<string>();
-            procedure_pcode_list = new Dictionary<int,string>();
+            procedure_pcode_list = new Dictionary<int,List<string>>();
+            codes = new List<string>();
             procedure_table = new Dictionary<int, int>();
+            dx_table = new Dictionary<int, int>();
         }
         void backup()
         {
@@ -59,6 +62,7 @@ namespace Compiler
                 procedure_pcode_list.Add(now_ptr, new List<string>());
             }
             procedure_pcode_list[now_ptr].Add(command + " "+l.ToString()+" " + a.ToString() + "\r\n");
+            codes.Add(command + " " + l.ToString() + " " + a.ToString() + "\r\n");
         }
         bool const_declaration_atom()
         {
@@ -187,7 +191,7 @@ namespace Compiler
                 if (sym_list[index][1]=="标识符")
                 {
                     add_to_procedure_stack(sym_list[index][0]);
-                    add_to_symbol_table_stack(build_entry(sym_list[index][0], "Procedure", procedure_stack.Count.ToString()));
+                    add_to_symbol_table_stack(build_entry(sym_list[index][0], "Procedure", codes.Count.ToString()));
                     index += 1;
                     if (sym_list[index][0]==";")
                     {
@@ -223,6 +227,7 @@ namespace Compiler
                 {
                     gen("JPC",0,0);
                     cx1 = procedure_pcode_list[now_ptr].Count()-1;
+                    int cx0 = codes.Count() - 1;
                     index += 1;
                     backup = index;
                     flag = statement();
@@ -231,6 +236,7 @@ namespace Compiler
                         error_message += "(Error Code 7)应为语句(line:" + sym_list[backup][3] + ")\r\n";
                         return false;
                     }
+                    codes[cx0] = "JPC" + " 0 " + (procedure_pcode_list[now_ptr].Count()).ToString() + "\r\n";
                     procedure_pcode_list[now_ptr][cx1] = "JPC" + " 0 " + (procedure_pcode_list[now_ptr].Count()).ToString()+"\r\n";
                 }
                 else
@@ -572,6 +578,7 @@ namespace Compiler
                 bool flag = condition();
                 gen("JPC", 0, 0);
                 cx1 = procedure_pcode_list[now_ptr].Count() - 1;
+                int cx0 = codes.Count() - 1;
                 if (!flag)
                 {
                     error_message += "(Error Code 25)while,if,until后应为条件(line:" + sym_list[backup][3] + ")\r\n";
@@ -593,6 +600,7 @@ namespace Compiler
                 { error_message += "(Error Code 18)应为do(line:" + sym_list[backup][3] + ")\r\n";
                     return false;
                 }
+                codes[cx0]= "JPC" + " 0 " + (procedure_pcode_list[now_ptr].Count()).ToString() + "\r\n";
                 procedure_pcode_list[now_ptr][cx1] = "JPC" + " 0 " + (procedure_pcode_list[now_ptr].Count()).ToString() + "\r\n";
                 return true;
             }
@@ -664,6 +672,7 @@ namespace Compiler
                 int backup = index;
                 index += 1;
                 cx1 = procedure_pcode_list[now_ptr].Count();
+                int cx0 = codes.Count();
                 bool flag = statement();
                 if (!flag)
                 {
@@ -692,7 +701,9 @@ namespace Compiler
                     error_message += "(Error Code 25)while,if,until后应为条件(line:" + sym_list[backup][3] + ")\r\n";
                     return false;
                 }
-                procedure_pcode_list[now_ptr][cx1] = "JPC" + " 0 " + (cx1).ToString() + "\r\n";
+                gen("JPC", 0, cx1);
+                //codes
+                //procedure_pcode_list[now_ptr][cx1] = "JPC" + " 0 " + (cx1).ToString() + "\r\n";
                 return true;
             }
             else
@@ -969,6 +980,14 @@ namespace Compiler
                     return false;
                 }
             }
+            if (new_one[1]=="Variable")
+            {
+                if (!dx_table.ContainsKey(now_ptr))
+                {
+                    dx_table.Add(now_ptr, 3);
+                }
+                dx_table[now_ptr] += 1;
+            }
             if (new_one[1]=="Procedure")
             {
                 if (!procedure_table.ContainsKey(id))
@@ -1003,7 +1022,8 @@ namespace Compiler
                         }
                         if (old_one[0].Equals(name) && old_one[1]=="Procedure")
                         {
-                            return (symbol_table_stack.Count - length).ToString() + " " + _index.ToString()+" "+old_one[1]+" "+item;
+                            int addr = Convert.ToInt32(old_one[2]);
+                            return (symbol_table_stack.Count - length).ToString() + " " + addr.ToString()+" "+old_one[1]+" "+item;
                         }
                     }
                     length--;
@@ -1056,7 +1076,8 @@ namespace Compiler
         {
             try
             {
-                
+                gen("JMP",0,0);
+                int cx0 = codes.Count() - 1;
                 subprogram_index_table.Add(now_ptr);
                 symbol_table_stack.Add(new List<string>());
                 symbol_table.Add(new List<string>());
@@ -1108,6 +1129,7 @@ namespace Compiler
                         return false;
                     }
                 }
+                codes[cx0] = "JMP 0 " + (codes.Count()).ToString();
                 flag = statement();
                 //if (!flag) return false;
 
