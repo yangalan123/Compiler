@@ -8,12 +8,16 @@ namespace Compiler
 {
     class GrammarAnalyser
     {
+        //OPR  0-return,1-NEGATIVE,2-PLUS,3-MINUS,4-MULTIPLY,5-DIVIDE,6-ODD,7-eql,8-neq,9-lss
+        //OPR  10-geq,11-gtr,12-leq
         String error_message;
         List<List<String>> symbol_table, symbol_table_stack;
         //List<List<String>> backup_symbol_table, backup_symbol_table_stack;
         List<int> subprogram_index_table;
         List<string>procedure_stack;
-        Dictionary<string, string> procedure_addr_list;
+        Dictionary<int, List<string>> procedure_pcode_list;
+        Dictionary<int, int> procedure_table;
+        //Array<string> pcode;
         int id = 0,now_ptr=0;
         List<List<String>> sym_list;
        // HashSet<String> First_Statement = new HashSet<string>(new string[] {"call","begin","if","while","repeat","read","write" });
@@ -35,7 +39,8 @@ namespace Compiler
             now_ptr = 0;
             subprogram_index_table = new List<int>();
             procedure_stack = new List<string>();
-            procedure_addr_list = new Dictionary<string, string>();
+            procedure_pcode_list = new Dictionary<int,string>();
+            procedure_table = new Dictionary<int, int>();
         }
         void backup()
         {
@@ -47,11 +52,18 @@ namespace Compiler
             index = ga_backup_index;
             error_message = ga_backup_error_message.ToString();
         }
+        void gen(string command,int l,int a)
+        {
+            if (!procedure_pcode_list.ContainsKey(now_ptr))
+            {
+                procedure_pcode_list.Add(now_ptr, new List<string>());
+            }
+            procedure_pcode_list[now_ptr].Add(command + " "+l.ToString()+" " + a.ToString() + "\r\n");
+        }
         bool const_declaration_atom()
         {
             if (sym_list[index][1]=="标识符")
             {
-                
                 index += 1;
                 if (sym_list[index][0] == "=")
                 {
@@ -59,11 +71,15 @@ namespace Compiler
                     if (sym_list[index][1] == "无符号整数")
                     {
                         if (sym_list[index][2] == "数值超过long范围")
-                        { error_message += "(Error Code 30)这个数太大(line:" + sym_list[index][3] + ")\r\n";
+                        {
+                            error_message += "(Error Code 30)这个数太大(line:" + sym_list[index][3] + ")\r\n";
                             add_to_symbol_table_stack(build_entry(sym_list[index-2][0],"Constant","INF"));
                         }
                         else
+                        {
                             add_to_symbol_table_stack(build_entry(sym_list[index - 2][0], "Constant", sym_list[index][0]));
+                            gen("LIT", 0, Convert.ToInt32(sym_list[index][0]));
+                        } 
                         index += 1;
 
                         return true;
@@ -122,6 +138,7 @@ namespace Compiler
                 if (sym_list[index][1]=="标识符")
                 {
                     add_to_symbol_table_stack(build_entry(sym_list[index][0], "Variable", "*"));
+                    
                     index += 1;
                     while (sym_list[index][0]==",")
                     {
@@ -170,7 +187,7 @@ namespace Compiler
                 if (sym_list[index][1]=="标识符")
                 {
                     add_to_procedure_stack(sym_list[index][0]);
-                    add_to_symbol_table_stack(build_entry(sym_list[index][0], "Procedure", "*"));
+                    add_to_symbol_table_stack(build_entry(sym_list[index][0], "Procedure", procedure_stack.Count.ToString()));
                     index += 1;
                     if (sym_list[index][0]==";")
                     {
@@ -191,6 +208,7 @@ namespace Compiler
         }
         bool condition_statement()
         {
+            int cx1 = 0;
             if (sym_list[index][0]=="if")
             {
                 int backup = index;
@@ -203,6 +221,8 @@ namespace Compiler
                 }
                 if (sym_list[index][0]=="then")
                 {
+                    gen("JPC",0,0);
+                    cx1 = procedure_pcode_list[now_ptr].Count()-1;
                     index += 1;
                     backup = index;
                     flag = statement();
@@ -211,6 +231,7 @@ namespace Compiler
                         error_message += "(Error Code 7)应为语句(line:" + sym_list[backup][3] + ")\r\n";
                         return false;
                     }
+                    procedure_pcode_list[now_ptr][cx1] = "JPC" + " 0 " + (procedure_pcode_list[now_ptr].Count()).ToString()+"\r\n";
                 }
                 else
                 {
@@ -235,7 +256,8 @@ namespace Compiler
         bool condition()
         {
             if (sym_list[index][0]=="odd")
-            { 
+            {
+                gen("OPR",0,6);
                 index += 1;
                 int backup = index;
                 bool flag = expr();
@@ -257,6 +279,27 @@ namespace Compiler
                 }
                 if (Relation_operator.Contains(sym_list[index][0]))
                 {
+                    switch(sym_list[index][0])
+                    {
+                        case "=":
+                            gen("OPR", 0, 7);
+                            break;
+                        case "<>":
+                            gen("OPR", 0, 8);
+                            break;
+                        case "<":
+                            gen("OPR", 0, 9);
+                            break;
+                        case ">=":
+                            gen("OPR",0,10);
+                            break;
+                        case ">":
+                            gen("OPR",0,11);
+                            break;
+                        case "<=":
+                            gen("OPR",0,12);
+                            break;
+                    }
                     backup = index;
                     index += 1;
                     flag = expr();
@@ -341,7 +384,26 @@ namespace Compiler
         {
             if (sym_list[index][1]=="标识符")
             {
-                query_symbol_table_stack(sym_list[index][0], "expression_not_assign");
+                string str=query_symbol_table_stack(sym_list[index][0], "expression_not_assign");
+                if (str!="Error")
+                {
+                    string[] strs = str.Split(' ');
+                    if (strs[2]=="Variable")
+                    {
+                        int BL = Convert.ToInt32(strs[0]);
+                        int ON = Convert.ToInt32(strs[1]);
+                        gen("LOD", BL, ON);
+                    }
+                    else if (strs[2]=="Constant")
+                    {
+                        var entry = strs[3].Split('\r');
+                        if (entry[2]!="INF")
+                        {
+                            int val = Convert.ToInt32(entry[2]);
+                            gen("LIT", 0, val);
+                        }
+                    }
+                }
                 index += 1;
                 return true;
             }
@@ -398,6 +460,14 @@ namespace Compiler
                     error_message += "(Error Code 23)因子后不可为此符号("+sym_list[index][0]+")(line:"+sym_list[index][3]+")\r\n";
                 while (sym_list[index][0] == "*" || sym_list[index][0] == "/")
                 {
+                    if (sym_list[index][0]=="*")
+                    {
+                        gen("OPR", 0, 4);
+                    }
+                    else
+                    {
+                        gen("OPR", 0, 5);
+                    }
                     index += 1;
                     backup = index;
                     flag = factor();
@@ -417,17 +487,30 @@ namespace Compiler
         bool expr()
         {
             bool first = false;
-            if (sym_list[index][0]=="+" || sym_list[index][1]=="-")
+            bool neg = false;
+            if (sym_list[index][0]=="+" || sym_list[index][0]=="-")
             {
+                if (sym_list[index][0]=="-")
+                {
+                    neg = true;
+                    //gen("OPR", 0, 1);
+                }
+                gen("OPR",0,1);
                 index += 1;
                 first = true;
             }
             int backup = index;
             if (term())
             {
+                if (neg)
+                    gen("OPR", 0, 1);
                 first = true;
                 while (index < sym_list.Count() && sym_list[index][0] == "+" || sym_list[index][0] == "-")
                 {
+                    if (sym_list[index][0] == "+")
+                        gen("OPR", 0, 2);
+                    else if (sym_list[index][0] == "-")
+                        gen("OPR",0,3);
                     index += 1;
                     bool flag = term();
                     if (!flag)
@@ -457,13 +540,21 @@ namespace Compiler
         {
             if (sym_list[index][1]=="标识符")
             {
-                query_symbol_table_stack(sym_list[index][0], "assign");
+                string str=query_symbol_table_stack(sym_list[index][0], "assign");
                 index += 1;
                 if (sym_list[index][0]==":=")
                 {
                     index += 1;
                     bool flag = expr();
                     //if (flag) index += 1;
+                    if (str!="Error" && flag)
+                    { 
+                        var strs = str.Split(' ');
+                        int BL = Convert.ToInt32(strs[0]);
+                        int ON = Convert.ToInt32(strs[1]);
+                        gen("STO", BL, ON);
+                    }
+                    
                     return flag;
                 }
                 else
@@ -473,11 +564,14 @@ namespace Compiler
         }
         bool while_loop_statement()
         {
+            int cx1 = 0;
             if (sym_list[index][0]=="while")
             {
                 int backup = index;
                 index += 1;
                 bool flag = condition();
+                gen("JPC", 0, 0);
+                cx1 = procedure_pcode_list[now_ptr].Count() - 1;
                 if (!flag)
                 {
                     error_message += "(Error Code 25)while,if,until后应为条件(line:" + sym_list[backup][3] + ")\r\n";
@@ -496,7 +590,10 @@ namespace Compiler
                     }
                 }
                 else
-                    error_message += "(Error Code 18)应为do(line:"+sym_list[backup][3]+")\r\n";
+                { error_message += "(Error Code 18)应为do(line:" + sym_list[backup][3] + ")\r\n";
+                    return false;
+                }
+                procedure_pcode_list[now_ptr][cx1] = "JPC" + " 0 " + (procedure_pcode_list[now_ptr].Count()).ToString() + "\r\n";
                 return true;
             }
             return false;
@@ -509,7 +606,14 @@ namespace Compiler
                 index += 1;
                 if (sym_list[index][1] == "标识符")
                 {
-                    query_symbol_table_stack(sym_list[index][0],"Call");
+                    string str=query_symbol_table_stack(sym_list[index][0],"Call");
+                    if (str!="Error")
+                    {
+                        var strs = str.Split(' ');
+                        int BL = Convert.ToInt32(strs[0]);
+                        int ON = Convert.ToInt32(strs[1]);
+                        gen("CAL",BL,ON);
+                    }
                     index += 1;
                     return true;
                 }
@@ -554,10 +658,12 @@ namespace Compiler
         }
         bool repeat_statement()
         {
+            int cx1 = 0;
             if (sym_list[index][0] == "repeat")
             {
                 int backup = index;
                 index += 1;
+                cx1 = procedure_pcode_list[now_ptr].Count();
                 bool flag = statement();
                 if (!flag)
                 {
@@ -586,6 +692,7 @@ namespace Compiler
                     error_message += "(Error Code 25)while,if,until后应为条件(line:" + sym_list[backup][3] + ")\r\n";
                     return false;
                 }
+                procedure_pcode_list[now_ptr][cx1] = "JPC" + " 0 " + (cx1).ToString() + "\r\n";
                 return true;
             }
             else
@@ -604,7 +711,14 @@ namespace Compiler
                     index += 1;
                     if (sym_list[index][1]=="标识符")
                     {
-                        query_symbol_table_stack(sym_list[index][0], "others");
+                        string str = query_symbol_table_stack(sym_list[index][0], "others");
+                        if (str != "Error")
+                        {
+                            var strs = str.Split(' ');
+                            int BL = Convert.ToInt32(strs[0]);
+                            int ON = Convert.ToInt32(strs[1]);
+                            gen("RED", BL, ON);
+                        }
                         index += 1;
                         while (index < sym_list.Count() && sym_list[index][0]==",")
                         {
@@ -614,7 +728,14 @@ namespace Compiler
                                 error_message += "(Error Code 36)应为标识符(line:" + sym_list[index][3] + ")\r\n";
                                 return false;
                             }
-                            query_symbol_table_stack(sym_list[index][0], "others");
+                            str = query_symbol_table_stack(sym_list[index][0], "others");
+                            if (str != "Error")
+                            {
+                                var strs = str.Split(' ');
+                                int BL = Convert.ToInt32(strs[0]);
+                                int ON = Convert.ToInt32(strs[1]);
+                                gen("RED", BL, ON);
+                            }
                             index += 1;
                         }
                         if (sym_list[index][0]==")")
@@ -651,7 +772,14 @@ namespace Compiler
                     index += 1;
                     if (sym_list[index][1] == "标识符")
                     {
-                        query_symbol_table_stack(sym_list[index][0], "others");
+                        string str=query_symbol_table_stack(sym_list[index][0], "others");
+                        if (str != "Error")
+                        {
+                            var strs = str.Split(' ');
+                            int BL = Convert.ToInt32(strs[0]);
+                            int ON = Convert.ToInt32(strs[1]);
+                            gen("WRT", 0, 0);
+                        }
                         index += 1;
                         while (index < sym_list.Count() && sym_list[index][0] == ",")
                         {
@@ -661,7 +789,14 @@ namespace Compiler
                                 error_message += "(Error Code 36)应为标识符(line:" + sym_list[index][3] + ")\r\n";
                                 return false;
                             }
-                            query_symbol_table_stack(sym_list[index][0], "others");
+                            str = query_symbol_table_stack(sym_list[index][0], "others");
+                            if (str != "Error")
+                            {
+                                var strs = str.Split(' ');
+                                int BL = Convert.ToInt32(strs[0]);
+                                int ON = Convert.ToInt32(strs[1]);
+                                gen("WRT", 0, 0);
+                            }
                             index += 1;
                         }
                         if (sym_list[index][0] == ")")
@@ -834,25 +969,46 @@ namespace Compiler
                     return false;
                 }
             }
+            if (new_one[1]=="Procedure")
+            {
+                if (!procedure_table.ContainsKey(id))
+                {
+                    procedure_table.Add(id, 0);
+                }
+                procedure_table[id] = symbol_table.Count;
+            }
             entry += id.ToString()+"\r";
             id += 1;
             dict.Add(entry);
             return true;
         }
-        int query_symbol_table_stack(string name,string type)
+        string query_symbol_table_stack(string name,string type)
         {
             if (type=="Call")
             {
-                var now_list = symbol_table_stack.Last();
-                foreach (var item in now_list)
+                
+                var length = symbol_table_stack.Count-1;
+                int _index = -1;
+                while (length >= 0)
                 {
-                    var old_one = item.Split('\r');
-                    if (old_one[0].Equals(name) && old_one[1] != "Procedure")
+                    _index += 1;
+                    var now_list = symbol_table_stack[length];
+                    foreach (var item in now_list)
                     {
-                        error_message += "(Error Code 15)不可调用常量或变量(line:" + sym_list[index][3] + ")\r\n";
-                        return -1;
+                        var old_one = item.Split('\r');
+                        if (old_one[0].Equals(name) && old_one[1] != "Procedure")
+                        {
+                            error_message += "(Error Code 15)不可调用常量或变量(line:" + sym_list[index][3] + ")\r\n";
+                            return "Error";
+                        }
+                        if (old_one[0].Equals(name) && old_one[1]=="Procedure")
+                        {
+                            return (symbol_table_stack.Count - length).ToString() + " " + _index.ToString()+" "+old_one[1]+" "+item;
+                        }
                     }
+                    length--;
                 }
+                error_message += "调用了未定义的函数" + name + "(line:" + sym_list[index][3] + ")\r\n";
             }
             else if (type=="expression_not_assign" || type=="assign" || type=="others")
             {
@@ -862,36 +1018,38 @@ namespace Compiler
                     if (type=="assign")
                     {
                         error_message += "(Error Code 12)不可向常量或过程赋值(line:" + sym_list[index][3] + ")\r\n";
-                        return -1;
+                        return "Error";
                     }
-                    return -1;
+                    return "Error";
                 }
                 int stack_count = symbol_table_stack.Count-1;
                 while (stack_count>=0)
                 {
                     var now_list = symbol_table_stack[stack_count];
+                    int _index = -1;
                     foreach (var item in now_list)
                     {
+                        _index += 1;
                         var old_one = item.Split('\r');
                         if (old_one[0] == name && old_one[1] == "Constant" && type == "assign")
                         {
                             error_message += "(Error Code 12)不可向常量或过程赋值(line:" + sym_list[index][3] + ")\r\n";
-                            return -1;
+                            return "Error";
                         }
                         if (old_one[0] == name && old_one[1] != "Procedure")
                         {
-                            return 0;
+                            return (symbol_table_stack.Count-stack_count).ToString()+" "+_index.ToString()+" "+old_one[1];
                         }
 
                     }
                     stack_count--;
                 }
                 error_message += "(Error Code 11)标识符"+name+"未说明(line:" + sym_list[index][3] + ")\r\n";
-                return -1;
+                return "Error";
                 
 
             }
-            return 0;
+            return "Error";
            // var program = 0;
         }
         bool program()
@@ -899,7 +1057,7 @@ namespace Compiler
             try
             {
                 
-                subprogram_index_table.Add(index);
+                subprogram_index_table.Add(now_ptr);
                 symbol_table_stack.Add(new List<string>());
                 symbol_table.Add(new List<string>());
                 now_ptr = symbol_table.Count - 1;
@@ -994,10 +1152,11 @@ namespace Compiler
         {
             this.sym_list = sym_list;
             bool flag = program();
-           /* if (!flag)
-            {
-                Console.WriteLine(error_message);
-            }*/
+            /* if (!flag)
+             {
+                 Console.WriteLine(error_message);
+             }*/
+            if (!flag) return error_message;
             int backup = index;
             flag = checkend();
             if (!flag) error_message += "(Error Code 9)应为句号(line:" + sym_list[backup][3]+")\r\n";
