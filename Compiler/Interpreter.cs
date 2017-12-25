@@ -167,11 +167,11 @@ namespace Compiler
                                 Console.WriteLine("Not a number,please try again:");
                             }
                         }
-                        datastack[getbase(lev) + bias] = x;
+                        datastack[getbase(lev) + bias+3] = x;
                     }
                     else if (command[0] == "WRT")
                     {
-                        Console.WriteLine(datastack[getbase(lev) + bias]);
+                        Console.WriteLine(datastack[getbase(lev) + bias+3]);
                         //t = t + 1;
                     }
                     else throw new Exception("No such command");

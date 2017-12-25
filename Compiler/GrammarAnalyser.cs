@@ -220,6 +220,7 @@ namespace Compiler
             {
                 int backup = index;
                 index += 1;
+                int cx2 = 0;
                 bool flag = condition();
                 if (!flag)
                 {
@@ -239,8 +240,10 @@ namespace Compiler
                         error_message += "(Error Code 7)应为语句(line:" + sym_list[backup][3] + ")\r\n";
                         return false;
                     }
-                    codes[cx0] = "JPC" + " 0 " + (codes.Count()).ToString() + "\r\n";
+                    codes[cx0] = "JPC" + " 0 " + (codes.Count()+1).ToString() + "\r\n";
                     procedure_pcode_list[now_ptr][cx1] = "JPC" + " 0 " + (procedure_pcode_list[now_ptr].Count()).ToString()+"\r\n";
+                    gen("JMP", 0, codes.Count+1);
+                    cx2 = codes.Count() - 1;
                 }
                 else
                 {
@@ -257,6 +260,7 @@ namespace Compiler
                         error_message += "(Error Code 7)应为语句(line:" + sym_list[backup][3] + ")\r\n";
                         return false;
                     }
+                    codes[cx2]="JMP 0 "+(codes.Count()).ToString() + "\r\n";
                 }
                 return true;
             }
