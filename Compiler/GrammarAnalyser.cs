@@ -82,7 +82,7 @@ namespace Compiler
                         else
                         {
                             add_to_symbol_table_stack(build_entry(sym_list[index - 2][0], "Constant", sym_list[index][0]));
-                            gen("LIT", 0, Convert.ToInt32(sym_list[index][0]));
+                            //gen("LIT", 0, Convert.ToInt32(sym_list[index][0]));
                         } 
                         index += 1;
 
@@ -417,6 +417,11 @@ namespace Compiler
             {
                 if (sym_list[index][2] == "数值超过long范围")
                     error_message += "(Error Code 30)这个数太大(line:" + sym_list[index][3] + ")\r\n";
+                if (sym_list[index][2] != "INF")
+                {
+                    int val = Convert.ToInt32(sym_list[index][2]);
+                    gen("LIT", 0, val);
+                }
                 index += 1;
                 return true;
             }
@@ -466,7 +471,12 @@ namespace Compiler
                     error_message += "(Error Code 23)因子后不可为此符号("+sym_list[index][0]+")(line:"+sym_list[index][3]+")\r\n";
                 while (sym_list[index][0] == "*" || sym_list[index][0] == "/")
                 {
-                    if (sym_list[index][0]=="*")
+                    int cx0 = index;
+                    
+                    index += 1;
+                    backup = index;
+                    flag = factor();
+                    if (sym_list[cx0][0] == "*")
                     {
                         gen("OPR", 0, 4);
                     }
@@ -474,9 +484,6 @@ namespace Compiler
                     {
                         gen("OPR", 0, 5);
                     }
-                    index += 1;
-                    backup = index;
-                    flag = factor();
                     if (!flag)
                     {
                         error_message += "(Error Code 32)因子定义错误(line:" + sym_list[backup][3] + ")\r\n";
@@ -513,10 +520,8 @@ namespace Compiler
                 first = true;
                 while (index < sym_list.Count() && sym_list[index][0] == "+" || sym_list[index][0] == "-")
                 {
-                    if (sym_list[index][0] == "+")
-                        gen("OPR", 0, 2);
-                    else if (sym_list[index][0] == "-")
-                        gen("OPR",0,3);
+                    int cx0 = index;
+                    
                     index += 1;
                     bool flag = term();
                     if (!flag)
@@ -524,6 +529,10 @@ namespace Compiler
                         error_message += "(Error Code 34)项定义错误(line:" + sym_list[backup][3] + ")\r\n";
                         return false;
                     }
+                    if (sym_list[cx0][0] == "+")
+                        gen("OPR", 0, 2);
+                    else if (sym_list[cx0][0] == "-")
+                        gen("OPR", 0, 3);
                     //index += 1;
                 }
                 //have increased index by 1
@@ -984,7 +993,7 @@ namespace Compiler
             {
                 if (!dx_table.ContainsKey(now_ptr))
                 {
-                    dx_table.Add(now_ptr, 3);
+                    dx_table.Add(now_ptr, 0);
                 }
                 dx_table[now_ptr] += 1;
             }
@@ -1023,7 +1032,7 @@ namespace Compiler
                         if (old_one[0].Equals(name) && old_one[1]=="Procedure")
                         {
                             int addr = Convert.ToInt32(old_one[2]);
-                            return (symbol_table_stack.Count - length).ToString() + " " + addr.ToString()+" "+old_one[1]+" "+item;
+                            return (symbol_table_stack.Count - length-1).ToString() + " " + addr.ToString()+" "+old_one[1]+" "+item;
                         }
                     }
                     length--;
@@ -1058,7 +1067,7 @@ namespace Compiler
                         }
                         if (old_one[0] == name && old_one[1] != "Procedure")
                         {
-                            return (symbol_table_stack.Count-stack_count).ToString()+" "+_index.ToString()+" "+old_one[1];
+                            return (symbol_table_stack.Count-stack_count-1).ToString()+" "+_index.ToString()+" "+old_one[1]+" "+item;
                         }
 
                     }
@@ -1076,8 +1085,11 @@ namespace Compiler
         {
             try
             {
+                var isorigin = false;
                 gen("JMP",0,0);
                 int cx0 = codes.Count() - 1;
+                if (symbol_table_stack.Count() == 0)
+                    isorigin = true;
                 subprogram_index_table.Add(now_ptr);
                 symbol_table_stack.Add(new List<string>());
                 symbol_table.Add(new List<string>());
@@ -1129,9 +1141,28 @@ namespace Compiler
                         return false;
                     }
                 }
-                codes[cx0] = "JMP 0 " + (codes.Count()).ToString();
+                codes[cx0] = "JMP 0 " + (codes.Count()).ToString()+"\r\n";
+                if (dx_table.ContainsKey(now_ptr))
+                    gen("INT", 0, dx_table[now_ptr] + 3);
+                else
+                    gen("INT",0,3);
+                if (!isorigin)
+                {
+                    var len = symbol_table_stack.Count - 2;
+                    var dict = symbol_table_stack[len];
+                    var len2 = dict.Count - 1;
+                    var tmp = dict[len2].Split('\r');
+                    tmp[2]= (codes.Count()).ToString();
+                    var s = "";
+                    foreach (var item in tmp)
+                    {
+                        s += item + '\r';
+                    }
+                    dict[len2] = s;
+                }
                 flag = statement();
                 //if (!flag) return false;
+                gen("OPR",0,0);
 
                 symbol_table[now_ptr] = symbol_table_stack.Last();
                 subprogram_index_table.RemoveAt(subprogram_index_table.Count-1);
@@ -1185,6 +1216,19 @@ namespace Compiler
             if (!flag)
             {
                 Console.WriteLine(error_message);
+            }
+            Console.WriteLine("P-Code:");
+            foreach(var item in codes)
+            {
+                Console.Write(item);
+            }
+            Console.WriteLine("Table:");
+            foreach(var item in symbol_table)
+            {
+                foreach(var item2 in item)
+                {
+                    Console.WriteLine(item2);
+                }
             }
             return error_message;
         }

@@ -32,3 +32,11 @@ procedure hhh7;
 write(a,b,c);
 procedure hhh8;
 call hhh7;;;;;;;;.
+
+
+const pi = 3,pi2=4;
+var a,b,c;
+procedure hhh;
+var tt;
+tt:=-pi+pi2*(pi-pi2)/pi2;
+call hhh;.
