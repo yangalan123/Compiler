@@ -690,13 +690,13 @@ namespace Compiler
         }
         bool repeat_statement()
         {
-            int cx1 = 0;
+            int cx1 = 0,cx0=0;
             if (sym_list[index][0] == "repeat")
             {
                 int backup = index;
                 index += 1;
                 cx1 = procedure_pcode_list[now_ptr].Count();
-                int cx0 = codes.Count();
+                cx0 = codes.Count();
                 bool flag = statement();
                 if (!flag)
                 {
@@ -725,7 +725,7 @@ namespace Compiler
                     error_message += "(Error Code 25)while,if,until后应为条件(line:" + sym_list[backup][3] + ")\r\n";
                     return false;
                 }
-                gen("JPC", 0, cx1);
+                gen("JPC", 0, cx0);
                 //codes
                 //procedure_pcode_list[now_ptr][cx1] = "JPC" + " 0 " + (cx1).ToString() + "\r\n";
                 return true;

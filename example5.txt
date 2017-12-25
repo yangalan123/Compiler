@@ -14,7 +14,6 @@ procedure gcd;
 procedure fact;
 var f;
 begin
-  f:=1;
   if n > 1 then
   begin
     f := n * f;
@@ -28,6 +27,7 @@ end;
 	call gcd;
 	write(z);
 	n:=10;
+	f:=1;
 	call fact;
 	write(f);
       end.
