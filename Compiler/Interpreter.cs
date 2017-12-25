@@ -25,15 +25,16 @@ namespace Compiler
         void init()
         {
             //stack = new int[MAX_STACK_LENGTH];
-            b = 1; //no direct outer
+            b = 0; //no direct outer
             p = 0;
-            t = 0;
+            t = -1;
         }
         public void inter(List<string> codes)
         {
             init();
             this.codes = codes;
             Console.WriteLine("Start");
+            int local = 3;
             try
             {
                 do
@@ -114,14 +115,14 @@ namespace Compiler
                     {
                         //int lev = Convert.ToInt32(command[1]);
                         //int bias = Convert.ToInt32(command[2]);
-                        datastack[++t] = datastack[getbase(lev) + bias+3];
+                        datastack[++t] = datastack[getbase(lev) + bias+local];
 
                     }
                     else if (command[0] == "STO")
                     {
                         //int lev = Convert.ToInt32(command[1]);
                         //int bias = Convert.ToInt32(command[2]);
-                        datastack[getbase(lev) + bias+3] = datastack[t];
+                        datastack[getbase(lev) + bias+local] = datastack[t];
                         t = t - 1;
                     }
                     else if (command[0] == "CAL")
@@ -167,11 +168,11 @@ namespace Compiler
                                 Console.WriteLine("Not a number,please try again:");
                             }
                         }
-                        datastack[getbase(lev) + bias+3] = x;
+                        datastack[getbase(lev) + bias+local] = x;
                     }
                     else if (command[0] == "WRT")
                     {
-                        Console.WriteLine(datastack[getbase(lev) + bias+3]);
+                        Console.WriteLine(datastack[getbase(lev) + bias+local]);
                         //t = t + 1;
                     }
                     else throw new Exception("No such command");

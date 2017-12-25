@@ -3,16 +3,13 @@ var a,b,c;
 procedure hhh2;
 var a,b;
 begin
-a:=3;
+a:=0;
 b:=4;
-if a<b then a:=a+b else b:=a+b;
+while a<=b do
+a:=a+2;
 write(a,b);
 end;
 procedure hhh;
 var tt;
-begin
-tt:=0;
-write(tt);
 call hhh2;
-end;
 call hhh2.

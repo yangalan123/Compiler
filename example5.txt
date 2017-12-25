@@ -1,4 +1,4 @@
-var x,y,z;
+var x,y,z,n;
 procedure gcd;
    var f,g;
    begin
@@ -11,9 +11,23 @@ procedure gcd;
           end;
 	  z:=f
     end;
+procedure fact;
+var f;
+begin
+  f:=1;
+  if n > 1 then
+  begin
+    f := n * f;
+    n := n - 1;
+    call fact
+  end
+end;
       begin
 	x:=84;
 	y:=36;
 	call gcd;
-	write(z)
+	write(z);
+	n:=10;
+	call fact;
+	write(f);
       end.

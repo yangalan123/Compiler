@@ -595,7 +595,9 @@ namespace Compiler
             if (sym_list[index][0]=="while")
             {
                 int backup = index;
+                int cx2 = codes.Count();
                 index += 1;
+                
                 bool flag = condition();
                 gen("JPC", 0, 0);
                 cx1 = procedure_pcode_list[now_ptr].Count() - 1;
@@ -621,6 +623,7 @@ namespace Compiler
                 { error_message += "(Error Code 18)应为do(line:" + sym_list[backup][3] + ")\r\n";
                     return false;
                 }
+                gen("JMP",0,cx2);
                 codes[cx0]= "JPC" + " 0 " + (codes.Count()).ToString() + "\r\n";
                 procedure_pcode_list[now_ptr][cx1] = "JPC" + " 0 " + (procedure_pcode_list[now_ptr].Count()).ToString() + "\r\n";
                 return true;
@@ -1070,8 +1073,10 @@ namespace Compiler
                     int _index = -1;
                     foreach (var item in now_list)
                     {
-                        _index += 1;
                         var old_one = item.Split('\r');
+                        if (old_one[1] == "Variable")
+                            _index += 1;
+                        
                         if (old_one[0] == name && old_one[1] == "Constant" && type == "assign")
                         {
                             error_message += "(Error Code 12)不可向常量或过程赋值(line:" + sym_list[index][3] + ")\r\n";
@@ -1102,10 +1107,10 @@ namespace Compiler
                 int cx0 = codes.Count() - 1;
                 if (symbol_table_stack.Count() == 0)
                     isorigin = true;
-                subprogram_index_table.Add(now_ptr);
                 symbol_table_stack.Add(new List<string>());
                 symbol_table.Add(new List<string>());
                 now_ptr = symbol_table.Count - 1;
+                subprogram_index_table.Add(now_ptr);
                 bool flag = true;
                 if (index < sym_list.Count() && sym_list[index][0] == "const")
                 {
@@ -1141,8 +1146,10 @@ namespace Compiler
                 if (index < sym_list.Count() && sym_list[index][0] == "procedure")
                 {
                     flag = procedure_declaration_part();
+                    
                     if (!flag)
                     {
+                        Console.WriteLine("WTF");
                         symbol_table[now_ptr] = symbol_table_stack.Last();
                         subprogram_index_table.RemoveAt(subprogram_index_table.Count - 1);
                         if (subprogram_index_table.Count > 0)
