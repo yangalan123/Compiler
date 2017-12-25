@@ -19,6 +19,7 @@ namespace Compiler
         String OutputFileName = "";
         PL0LexParser parser = new PL0LexParser();
         GrammarAnalyser GAparser = new GrammarAnalyser();
+        Interpreter interpreter = new Interpreter();
         String outputdir = "";
         public MainWindow()
         {
@@ -58,6 +59,7 @@ namespace Compiler
             GAparser.init();
             var error = GAparser.parse(result);
             File.AppendAllText(OutputFileName,error);
+            interpreter.inter(GAparser.Codes);
             //Process.Start("explorer.exe", @outputdir);
         }
 

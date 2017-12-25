@@ -29,6 +29,9 @@ namespace Compiler
         int index = 0;
         int ga_backup_index;
         StringBuilder ga_backup_error_message;
+
+        public List<string> Codes { get => codes; set => codes = value; }
+
         public void init()
         {
             error_message="";
@@ -236,7 +239,7 @@ namespace Compiler
                         error_message += "(Error Code 7)应为语句(line:" + sym_list[backup][3] + ")\r\n";
                         return false;
                     }
-                    codes[cx0] = "JPC" + " 0 " + (procedure_pcode_list[now_ptr].Count()).ToString() + "\r\n";
+                    codes[cx0] = "JPC" + " 0 " + (codes.Count()).ToString() + "\r\n";
                     procedure_pcode_list[now_ptr][cx1] = "JPC" + " 0 " + (procedure_pcode_list[now_ptr].Count()).ToString()+"\r\n";
                 }
                 else
@@ -263,10 +266,11 @@ namespace Compiler
         {
             if (sym_list[index][0]=="odd")
             {
-                gen("OPR",0,6);
+                
                 index += 1;
                 int backup = index;
                 bool flag = expr();
+                gen("OPR", 0, 6);
                 if (!flag)
                 {
                     error_message += "(Error Code 27)应为表达式(line:" + sym_list[backup][3] + ")\r\n";
@@ -285,7 +289,18 @@ namespace Compiler
                 }
                 if (Relation_operator.Contains(sym_list[index][0]))
                 {
-                    switch(sym_list[index][0])
+                    int cx0 = index;
+                    
+                    backup = index;
+                    index += 1;
+                    flag = expr();
+                    
+                    if (!flag)
+                    {
+                        error_message += "(Error Code 27)应为表达式(line:" + sym_list[backup][3] + ")\r\n"; 
+                        return false;
+                    }
+                    switch (sym_list[cx0][0])
                     {
                         case "=":
                             gen("OPR", 0, 7);
@@ -297,22 +312,14 @@ namespace Compiler
                             gen("OPR", 0, 9);
                             break;
                         case ">=":
-                            gen("OPR",0,10);
+                            gen("OPR", 0, 10);
                             break;
                         case ">":
-                            gen("OPR",0,11);
+                            gen("OPR", 0, 11);
                             break;
                         case "<=":
-                            gen("OPR",0,12);
+                            gen("OPR", 0, 12);
                             break;
-                    }
-                    backup = index;
-                    index += 1;
-                    flag = expr();
-                    if (!flag)
-                    {
-                        error_message += "(Error Code 27)应为表达式(line:" + sym_list[backup][3] + ")\r\n"; 
-                        return false;
                     }
                     return true;
                 }
@@ -405,6 +412,7 @@ namespace Compiler
                         var entry = strs[3].Split('\r');
                         if (entry[2]!="INF")
                         {
+                            //Console.WriteLine(entry);
                             int val = Convert.ToInt32(entry[2]);
                             gen("LIT", 0, val);
                         }
@@ -508,7 +516,7 @@ namespace Compiler
                     neg = true;
                     //gen("OPR", 0, 1);
                 }
-                gen("OPR",0,1);
+                //gen("OPR",0,1);
                 index += 1;
                 first = true;
             }
@@ -609,7 +617,7 @@ namespace Compiler
                 { error_message += "(Error Code 18)应为do(line:" + sym_list[backup][3] + ")\r\n";
                     return false;
                 }
-                codes[cx0]= "JPC" + " 0 " + (procedure_pcode_list[now_ptr].Count()).ToString() + "\r\n";
+                codes[cx0]= "JPC" + " 0 " + (codes.Count()).ToString() + "\r\n";
                 procedure_pcode_list[now_ptr][cx1] = "JPC" + " 0 " + (procedure_pcode_list[now_ptr].Count()).ToString() + "\r\n";
                 return true;
             }
@@ -798,7 +806,7 @@ namespace Compiler
                             var strs = str.Split(' ');
                             int BL = Convert.ToInt32(strs[0]);
                             int ON = Convert.ToInt32(strs[1]);
-                            gen("WRT", 0, 0);
+                            gen("WRT", BL, ON);
                         }
                         index += 1;
                         while (index < sym_list.Count() && sym_list[index][0] == ",")
@@ -815,7 +823,7 @@ namespace Compiler
                                 var strs = str.Split(' ');
                                 int BL = Convert.ToInt32(strs[0]);
                                 int ON = Convert.ToInt32(strs[1]);
-                                gen("WRT", 0, 0);
+                                gen("WRT", BL, ON);
                             }
                             index += 1;
                         }
@@ -1152,7 +1160,7 @@ namespace Compiler
                     var dict = symbol_table_stack[len];
                     var len2 = dict.Count - 1;
                     var tmp = dict[len2].Split('\r');
-                    tmp[2]= (codes.Count()).ToString();
+                    tmp[2]= (codes.Count()-1).ToString();
                     var s = "";
                     foreach (var item in tmp)
                     {

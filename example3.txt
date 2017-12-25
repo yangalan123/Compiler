@@ -1,12 +1,18 @@
 const pi = 3,pi2=4;
 var a,b,c;
 procedure hhh2;
-const a=3,b=4;
+var a,b;
+begin
+a:=3;
+b:=4;
 if a<b then a:=a+b else b:=a+b;
+write(a,b);
+end;
 procedure hhh;
 var tt;
 begin
-tt:=-pi+pi2*(pi-pi2)/pi2;
+tt:=0;
+write(tt);
 call hhh2;
 end;
-call hhh.
+call hhh2.

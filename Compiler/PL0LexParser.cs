@@ -141,7 +141,7 @@ namespace Compiler
                                 try
                                 {
                                     long num = long.Parse(token.ToString());
-                                    result.Add(newItem(token.ToString(), "无符号整数", Convert.ToString(num, 2), num_lines.ToString()));
+                                    result.Add(newItem(token.ToString(), "无符号整数", Convert.ToString(num), num_lines.ToString()));
                                 }
                                 catch
                                 {
@@ -177,7 +177,7 @@ namespace Compiler
                             try
                             {
                                 long num = long.Parse(token.ToString());
-                                result.Add(newItem(token.ToString(), "无符号整数", Convert.ToString(num,2), num_lines.ToString()));
+                                result.Add(newItem(token.ToString(), "无符号整数", Convert.ToString(num), num_lines.ToString()));
                             }
                             catch
                             {
