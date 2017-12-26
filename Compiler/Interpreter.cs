@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Microsoft.VisualBasic;
 
 namespace Compiler
 {
@@ -10,8 +11,10 @@ namespace Compiler
     {
         List<string> codes = null;
         int[] datastack = new int[MAX_STACK_LENGTH];
+        List<int> input_num = new List<int>();
         const int MAX_STACK_LENGTH = 1024;
-        int p, b,t;
+        int p, b,t,input_index;
+        public string result;
         int getbase(int l)
         {
             int b1 = b;
@@ -28,12 +31,34 @@ namespace Compiler
             b = 0; //no direct outer
             p = 0;
             t = -1;
+            input_index = 0;
+            input_num.Clear();
+            result = "";
         }
-        public void inter(List<string> codes)
+        public void inter(List<string> codes,string input)
         {
             init();
             this.codes = codes;
-            Console.WriteLine("Start");
+            try
+            {
+                var strs = input.Split();
+                foreach (var item in strs)
+                {
+                    try
+                    {
+                        int x = Convert.ToInt32(item);
+                        input_num.Add(x);
+                    }
+                    catch (Exception e)
+                    {
+                        continue;
+                    }
+                }
+            }catch(Exception e)
+            {
+
+            }
+            result+="Start\r\n";
             int local = 3;
             try
             {
@@ -153,8 +178,8 @@ namespace Compiler
                     }
                     else if (command[0] == "RED")
                     {
-                        Console.WriteLine("Please input a number:");
-                        string s = Console.ReadLine();
+                        //Console.WriteLine("Please input a number:");
+                        /*string s = Console.ReadLine();
                         int x = 0;
                         while (true)
                         {
@@ -167,28 +192,40 @@ namespace Compiler
                             {
                                 Console.WriteLine("Not a number,please try again:");
                             }
+                        }*/
+                        try
+                        {
+                            int x = input_num[input_index++];
+                            datastack[getbase(lev) + bias + local] = x;
+                        }catch(Exception e)
+                        {
+                            result += "No enough input parameters\r\n";
+                            return;
                         }
-                        datastack[getbase(lev) + bias+local] = x;
                     }
                     else if (command[0] == "WRT")
                     {
-                        Console.WriteLine(datastack[getbase(lev) + bias+local]);
+                        result+=((datastack[getbase(lev) + bias+local]).ToString()+"\r\n");
                         //t = t + 1;
                     }
                     else throw new Exception("No such command");
 
                 } while (p != 0);
-                Console.WriteLine("END");
+                result+="END";
             }catch (Exception e)
             {
                 if (e is OutOfMemoryException || e is ArgumentOutOfRangeException)
                 {
-                    Console.WriteLine("Exceed The Stack Limit");
+                    result+="Exceed The Stack Limit\r\n";
+                    return;
                 }
                 else
                 {
-                    Console.WriteLine(e.Message);
-                    Console.WriteLine(e.StackTrace);
+                    result += e.Message+"\r\n";
+                    result += e.StackTrace+"\r\n";
+                    return;
+                    //Console.WriteLine(e.Message);
+                    //Console.WriteLine(e.StackTrace);
                 }
             }
         }

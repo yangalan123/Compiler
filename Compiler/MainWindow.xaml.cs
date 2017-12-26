@@ -6,6 +6,7 @@ using System.IO;
 using System.Text;
 using System.Collections.Generic;
 using System.Diagnostics;
+using Microsoft.VisualBasic;
 
 namespace Compiler
 {
@@ -37,7 +38,9 @@ namespace Compiler
         }
         private void Button_Click(object sender, RoutedEventArgs e)//button for "run"
         {
-            
+            this.pb.Minimum = 0;
+            this.pb.Maximum = 100;
+            this.pb.Value = 0;
             InputFileName = this.InputFileDest.Text;
             OutputFileName = this.OutputFileDest.Text;
             if (OutputFileName.Length==0)
@@ -54,12 +57,27 @@ namespace Compiler
             }
             else
                 text = File.ReadAllText(InputFileName);
+            this.pb.Value = 20;
+            this.run_button.Content = "读取代码ing..";
             List<List<string>> result = this.parser.parse(text);
-            File.WriteAllText(OutputFileName, output(result));
+            this.pb.Value = 30;
+            this.run_button.Content = "词法分析完成";
+            //File.WriteAllText(OutputFileName, output(result));
             GAparser.init();
             var error = GAparser.parse(result);
-            File.AppendAllText(OutputFileName,error);
-            interpreter.inter(GAparser.Codes);
+            File.WriteAllText(OutputFileName,error);
+            this.pb.Value = 50;
+            this.run_button.Content = "语法分析完成";
+            var s = "";
+            foreach (var item in GAparser.Codes)
+            {
+                s += item;
+            }
+            File.AppendAllText(OutputFileName,s);
+            interpreter.inter(GAparser.Codes,this.InputContent.Text);
+            File.AppendAllText(OutputFileName, "\r\n"+interpreter.result);
+            this.pb.Value = 100;
+            this.run_button.Content = "运行完成！（点击以再次执行）";
             //Process.Start("explorer.exe", @outputdir);
         }
 

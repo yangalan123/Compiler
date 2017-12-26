@@ -23,7 +23,7 @@ procedure prime;
 	end;
 begin
 	pf:=false;
-	n:=100;
+	read(n);
 	m:=2;
 	write(m);
 	m:=3;

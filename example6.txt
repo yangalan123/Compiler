@@ -19,11 +19,11 @@ begin
   until n<1
 end;
       begin
-	x:=84;
-	y:=36;
+	read(x);
+	read(y);
 	call gcd;
 	write(z);
-	n:=10;
+	read(n);
 	f:=1;
 	call fact;
 	write(f);
