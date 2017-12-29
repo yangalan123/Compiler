@@ -205,7 +205,8 @@ namespace Compiler
                     }
                     else if (command[0] == "WRT")
                     {
-                        result+=((datastack[getbase(lev) + bias+local]).ToString()+"\r\n");
+                        //result+=((datastack[getbase(lev) + bias+local]).ToString()+"\r\n");
+                        result += ((datastack[t]).ToString() + "\r\n");
                         //t = t + 1;
                     }
                     else throw new Exception("No such command");

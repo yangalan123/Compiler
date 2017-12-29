@@ -807,15 +807,17 @@ namespace Compiler
                     index += 1;
                     if (sym_list[index][1] == "标识符")
                     {
-                        string str=query_symbol_table_stack(sym_list[index][0], "others");
-                        if (str != "Error")
+                        expr();
+                        gen("WRT", 0, 0);
+                        //string str=query_symbol_table_stack(sym_list[index][0], "others");
+                        /*if (str != "Error")
                         {
                             var strs = str.Split(' ');
                             int BL = Convert.ToInt32(strs[0]);
                             int ON = Convert.ToInt32(strs[1]);
-                            gen("WRT", BL, ON);
-                        }
-                        index += 1;
+                            
+                        }*/
+                        //index += 1;
                         while (index < sym_list.Count() && sym_list[index][0] == ",")
                         {
                             index += 1;
@@ -824,15 +826,9 @@ namespace Compiler
                                 error_message += "(Error Code 36)应为标识符(line:" + sym_list[index][3] + ")\r\n";
                                 return false;
                             }
-                            str = query_symbol_table_stack(sym_list[index][0], "others");
-                            if (str != "Error")
-                            {
-                                var strs = str.Split(' ');
-                                int BL = Convert.ToInt32(strs[0]);
-                                int ON = Convert.ToInt32(strs[1]);
-                                gen("WRT", BL, ON);
-                            }
-                            index += 1;
+                            expr();
+                            gen("WRT", 0, 0);
+                            //index += 1;
                         }
                         if (sym_list[index][0] == ")")
                         {

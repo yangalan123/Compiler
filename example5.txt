@@ -12,7 +12,6 @@ procedure gcd;
 	  z:=f
     end;
 procedure fact;
-var f;
 begin
   if n > 1 then
   begin
