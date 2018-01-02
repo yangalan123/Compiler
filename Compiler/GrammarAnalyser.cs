@@ -12,12 +12,17 @@ namespace Compiler
         //OPR  10-geq,11-gtr,12-leq
         String error_message;
         List<List<String>> symbol_table, symbol_table_stack;
-        List<string> codes;
+        List<List<String>> backup_symbol_table, backup_symbol_table_stack;
+        List<string> codes,backup_codes;
         //List<List<String>> backup_symbol_table, backup_symbol_table_stack;
         List<int> subprogram_index_table;
+        List<int> backup_subprogram_index_table;
         List<string>procedure_stack;
+        List<string> backup_procedure_stack;
         Dictionary<int, List<string>> procedure_pcode_list;
+        Dictionary<int, List<string>> backup_procedure_pcode_list;
         Dictionary<int, int> procedure_table,dx_table;
+        Dictionary<int, int> backup_procedure_table, backup_dx_table;
         //Array<string> pcode;
         int id = 0,now_ptr=0;
         List<List<String>> sym_list;
@@ -26,18 +31,33 @@ namespace Compiler
         HashSet<String> Follow_Operators = new HashSet<string>(new string[] { ",","+","-","*","/",";",".",")","end","then","do","else","until"});
         HashSet<String> Relation_operator = new HashSet<string>(new string[] { "<>","<=",">=","<",">","="});
         HashSet<String> state_header = new HashSet<string>(new string[] { "if", "while" ,"call","repeat","begin","read","write"});
+        HashSet<String> Follow_procedure_header = new HashSet<string>(new string[] { "var","begin","if","while","call","repeat","标识符","read","write","const"});
+        HashSet<String> First_statement = new HashSet<string>(new string[] { "begin", "if", "while", "call", "repeat", "标识符", "read", "write"});
+        HashSet<String> Follow_Const = new HashSet<string>(new string[] { "var","procedure", "begin", "if", "while", "call", "repeat", "标识符", "read", "write" });
+        HashSet<String> Follow_Variable = new HashSet<string>(new string[] {  "procedure", "begin", "if", "while", "call", "repeat", "标识符", "read", "write" });
+        HashSet<String> Follow_Block = new HashSet<string>(new string[] { "end","until"});
         int index = 0;
         int ga_backup_index;
         StringBuilder ga_backup_error_message;
 
         public List<string> Codes { get => codes; set => codes = value; }
-
+        void test(HashSet<String> target)
+        {
+            Console.WriteLine("prev:"+sym_list[index-1][0] + sym_list[index-1][1] + sym_list[index-1][3]);
+            Console.WriteLine(sym_list[index][0]+sym_list[index][1]+sym_list[index][3]);
+            while(index<sym_list.Count && !target.Contains(sym_list[index][0]) && !target.Contains(sym_list[index][1]))
+            {
+                index += 1;
+            }
+            //return false;
+        }
         public void init()
         {
             error_message="";
             index = 0;
             symbol_table = new List<List<string>>();
             symbol_table_stack = new List<List<string>>();
+            backup_codes = new List<string>();
             id = 0;
             //block_num = -1;
             now_ptr = 0;
@@ -52,6 +72,7 @@ namespace Compiler
         {
             ga_backup_index = index;
             ga_backup_error_message = new StringBuilder(error_message);
+            
         }
         void restore()
         {
@@ -107,14 +128,20 @@ namespace Compiler
         {
 
             bool flag = const_declaration_atom();
-            if (!flag) return false;
+            if (!flag) {
+                test(Follow_Const);
+                if (index < sym_list.Count) return true;
+                    else return false;
+            }
           
             do
             {
+                if (sym_list[index][0] != ";" && sym_list[index][0] != ",")
+                    break;
                 if (sym_list[index][0] == ";")
                 {
                     index += 1;
-                    break;
+                    return true;
                 }
                     
                 if (sym_list[index][0] == ",")
@@ -134,8 +161,11 @@ namespace Compiler
                     
                 }
                 
+                
             } while (index < sym_list.Count());
-            return true;
+            test(Follow_Const);
+            if (index < sym_list.Count) return true;
+            else return false;
         }
         bool variable_declaration_part()
         {
@@ -153,7 +183,9 @@ namespace Compiler
                         if (sym_list[index][1]!="标识符")
                         {
                             error_message += "(Error Code 4) const, var, procedure之后应为标识符(line: " + sym_list[index][3] + ")\r\n";
-                            return false;
+                            test(Follow_Variable);
+                            if (index < sym_list.Count) return true;
+                            else return false;
                         }
                         add_to_symbol_table_stack(build_entry(sym_list[index][0], "Variable", "*"));
                         index += 1;
@@ -164,15 +196,25 @@ namespace Compiler
                         return true;
                     }
                     else
-                        error_message += "(Error Code 5) 漏掉逗号或分号 (line:"+sym_list[index][3]+")\r\n";
+                        error_message += "(Error Code 5)漏掉逗号或分号(line:"+sym_list[index-1][3]+")\r\n";
                 }
                 else
                 {
                     error_message += "(Error Code 4) const, var, procedure之后应为标识符(line: " + sym_list[index][3] + ")\r\n";
-                    return false;
+                    test(Follow_Variable);
+                    if (index < sym_list.Count) return true;
+                    else 
+                    {
+                        test(Follow_Variable);
+                        if (index < sym_list.Count) return true;
+                        else return false;
+                    }
                 }
             }
-            return false;
+            //if ()
+            test(Follow_Variable);
+            if (index < sym_list.Count) return true;
+            else return false;
         }
         void add_to_procedure_stack(string name)
         {
@@ -202,16 +244,20 @@ namespace Compiler
                         return true;
                     }
                     else
-                        error_message += "(Error Code 5) 漏掉逗号或分号 (line:" + sym_list[index][3] + ")\r\n";
+                        error_message += "(Error Code 5)漏掉逗号或分号(line:" + sym_list[index][3] + ")\r\n";
 
                 }
                 else
                 {
                     error_message += "(Error Code 4) const, var, procedure之后应为标识符(line: " + sym_list[index][3] + ")\r\n";
-                    return false;
+                    test(Follow_procedure_header);
+                    if (index < sym_list.Count) return true;
+                    else return false;
                 }
             }
-            return false;
+            test(Follow_procedure_header);
+            if (index < sym_list.Count) return true;
+            else return false;
         }
         bool condition_statement()
         {
@@ -348,6 +394,7 @@ namespace Compiler
                 return false;
             }
             int backup = index;
+           // Console.WriteLine("")
             flag = program();
             if (!flag)
             {
@@ -377,12 +424,12 @@ namespace Compiler
             {
                 if (index >= sym_list.Count)
                 {
-                    error_message += "(Error Code 6)过程说明后的符号''不正确(line:" + sym_list[index - 1][3] + ")\r\n";
+                    error_message += "(Error Code 6)过程说明后的符号"+sym_list[index][0]+"不正确(line:" + sym_list[index - 1][3] + ")\r\n";
                     //return false;
                 }
                 else
                 {
-                    error_message += "(Error Code 5)漏掉逗号或分号(line:" + sym_list[index][3] + ")\r\n";
+                    //error_message += "(Error Code 5)漏掉逗号或分号(line:" + sym_list[index][3] + ")\r\n";
                     error_message += "(Error Code 6)过程说明后的符号" + sym_list[index][0] + "不正确(line:" + sym_list[index][3] + ")\r\n";
                 }
                 procedure_stack.RemoveAt(procedure_stack.Count - 1);
@@ -665,17 +712,24 @@ namespace Compiler
                 if (!flag)
                 {
                     error_message += "(Error Code 7)应为语句(line:" + sym_list[backup][3] + ")\r\n";
-                    return false;
+                    test(First_statement);
+                    if (index >= sym_list.Count) return false;
+                    //else return false;
+                    
                 }
-                while (sym_list[index][0]==";")
+                while (sym_list[index][0]==";" || First_statement.Contains(sym_list[index][0]) || First_statement.Contains(sym_list[index][1]))
                 {
-                    index += 1;
+                    if (sym_list[index][0]==";")
+                        index += 1;
                     backup = index;
                     flag = statement();
+                    //Console.WriteLine("WTF_BLOCK:"+sym_list[index][0]+":"+sym_list[index][3]);
                     if (!flag)
                     {
+                        //Console.WriteLine("WTF_BLOCK2:" + sym_list[index][0] + ":" + sym_list[index][3]);
                         error_message += "(Error Code 7)应为语句(line:" + sym_list[backup][3] + ")\r\n";
-                        return false;
+                        test(First_statement);
+                        if (index >= sym_list.Count) return false;
                     }
                 }
             }
@@ -858,14 +912,18 @@ namespace Compiler
         {
             if (!(sym_list[index][1]=="标识符" || state_header.Contains(sym_list[index][0])))
                 return true;
+            Console.WriteLine("WTF:statement"+sym_list[index][0]+sym_list[index][3]);
             if (sym_list[index][1] =="标识符")
             {
                 int backup = index;
+                Console.WriteLine("WTF:"+sym_list[index][0]+":"+sym_list[index][3]);
                 bool flag = assign_statement();
                 if (!flag)
                 {
                     error_message += "赋值语句不规范(line:" + sym_list[backup][3] + ")\r\n";
-                    return false;
+                    test(First_statement);
+                    if (index < sym_list.Count) return true;
+                    else return false;
                 }
                 if (!Follow_Statement.Contains(sym_list[index][0]))
                     error_message += "(Error Code 8)程序体内语句部分后的符号" + sym_list[index][0] + "不正确(line:" + sym_list[index][3] + ")\r\n" + "(Error Code 19)语句后的符号"+ sym_list[index][0]+"不正确(line:" + sym_list[index][3] + ")\r\n";
@@ -880,7 +938,10 @@ namespace Compiler
                 if (!flag)
                 {
                     error_message += "选择语句不规范(line:" + sym_list[backup][3] + ")\r\n";
-                    return false;
+                    test(First_statement);
+                    Console.WriteLine("WTF_TEST:"+sym_list[index][0]+":"+sym_list[index][3]);
+                    if (index < sym_list.Count) return true;
+                    else return false;
                 }
                 if (!Follow_Statement.Contains(sym_list[index][0]))
                     error_message += "(Error Code 8)程序体内语句部分后的符号"+sym_list[index][0]+"不正确(line:" + sym_list[index][3] + ")\r\n"+ "(Error Code 19)语句后的符号" + sym_list[index][0] + "不正确(line:" + sym_list[index][3] + ")\r\n";
@@ -895,7 +956,9 @@ namespace Compiler
                 if (!flag)
                 {
                     error_message += "当型循环语句不规范(line:" + sym_list[backup][3] + ")\r\n";
-                    return false;
+                    test(First_statement);
+                    if (index < sym_list.Count) return true;
+                    else return false;
                 }
                 if (!Follow_Statement.Contains(sym_list[index][0]))
                     error_message += "(Error Code 8)程序体内语句部分后的符号" + sym_list[index][0] + "不正确(line:" + sym_list[index][3] + ")\r\n" + "(Error Code 19)语句后的符号" + sym_list[index][0] + "不正确(line:" + sym_list[index][3] + ")\r\n";
@@ -910,7 +973,9 @@ namespace Compiler
                 if (!flag)
                 {
                     error_message += "repeat循环语句不规范(line:" + sym_list[backup][3] + ")\r\n";
-                    return false;
+                    test(First_statement);
+                    if (index < sym_list.Count) return true;
+                    else return false;
                 }
                 if (!Follow_Statement.Contains(sym_list[index][0]))
                     error_message += "(Error Code 8)程序体内语句部分后的符号" + sym_list[index][0] + "不正确(line:" + sym_list[index][3] + ")\r\n" + "(Error Code 19)语句后的符号" + sym_list[index][0] + "不正确(line:" + sym_list[index][3] + ")\r\n";
@@ -925,7 +990,9 @@ namespace Compiler
                 if (!flag)
                 {
                     error_message += "复合语句不规范(line:" + sym_list[backup][3] + ")\r\n";
-                    return false;
+                    test(First_statement);
+                    if (index < sym_list.Count) return true;
+                    else return false;
                 }
                 if (!Follow_Statement.Contains(sym_list[index][0]))
                     error_message += "(Error Code 8)程序体内语句部分后的符号" + sym_list[index][0] + "不正确(line:" + sym_list[index][3] + ")\r\n" + "(Error Code 19)语句后的符号" + sym_list[index][0] + "不正确(line:" + sym_list[index][3] + ")\r\n";
@@ -940,7 +1007,9 @@ namespace Compiler
                 if (!flag)
                 {
                     error_message += "过程调用语句不规范(line:" + sym_list[backup][3] + ")\r\n";
-                    return false;
+                    test(First_statement);
+                    if (index < sym_list.Count) return true;
+                    else return false;
                 }
                 if (!Follow_Statement.Contains(sym_list[index][0]))
                     error_message += "(Error Code 8)程序体内语句部分后的符号" + sym_list[index][0] + "不正确(line:" + sym_list[index][3] + ")\r\n" + "(Error Code 19)语句后的符号" + sym_list[index][0] + "不正确(line:" + sym_list[index][3] + ")\r\n";
@@ -955,7 +1024,9 @@ namespace Compiler
                 if (!flag)
                 {
                     error_message += "读语句不规范(line:" + sym_list[backup][3] + ")\r\n";
-                    return false;
+                    test(First_statement);
+                    if (index < sym_list.Count) return true;
+                    else return false;
                 }
                 if (!Follow_Statement.Contains(sym_list[index][0]))
                     error_message += "(Error Code 8)程序体内语句部分后的符号" + sym_list[index][0] + "不正确(line:" + sym_list[index][3] + ")\r\n" + "(Error Code 19)语句后的符号" + sym_list[index][0] + "不正确(line:" + sym_list[index][3] + ")\r\n";
@@ -970,7 +1041,9 @@ namespace Compiler
                 if (!flag)
                 {
                     error_message += "写语句不规范(line:" + sym_list[backup][3] + ")\r\n";
-                    return false;
+                    test(First_statement);
+                    if (index < sym_list.Count) return true;
+                    else return false;
                 }
                 if (!Follow_Statement.Contains(sym_list[index][0]))
                     error_message += "(Error Code 8)程序体内语句部分后的符号" + sym_list[index][0] + "不正确(line:" + sym_list[index][3] + ")\r\n" + "(Error Code 19)语句后的符号" + sym_list[index][0] + "不正确(line:" + sym_list[index][3] + ")\r\n";
@@ -978,7 +1051,9 @@ namespace Compiler
                     error_message += "(Error Code 10)语句之间漏分号(line:" + sym_list[index][3] + ")\r\n";
                 return true;
             }
-            return false;
+            test(First_statement);
+            if (index < sym_list.Count) return true;
+            else return false;
         }
         string build_entry(string name,string variable_type,string value)
         {
@@ -1126,9 +1201,12 @@ namespace Compiler
                 }
                 if (index < sym_list.Count() && sym_list[index][0] == "var")
                 {
+                    //Console.WriteLine("WTF_VAR2:" + sym_list[index][0] + ":" + sym_list[index][3]);
                     flag = variable_declaration_part();
+                    //Console.WriteLine("WTF_VAR:" + sym_list[index][0] + ":" + sym_list[index][3]);
                     if (!flag)
                     {
+                        
                         symbol_table[now_ptr] = symbol_table_stack.Last();
                         subprogram_index_table.RemoveAt(subprogram_index_table.Count - 1);
                         if (subprogram_index_table.Count > 0)
@@ -1175,7 +1253,13 @@ namespace Compiler
                     }
                     dict[len2] = s;
                 }
-                flag = statement();
+                if (sym_list[index][0]=="const" || sym_list[index][0]=="var")
+                {
+                    while (index < sym_list.Count && sym_list[index][0] != ";")
+                        index += 1;
+                }
+                if (index<sym_list.Count)
+                    flag = statement();
                 //if (!flag) return false;
                 gen("OPR",0,0);
 

@@ -73,9 +73,16 @@ namespace Compiler
             {
                 s += item;
             }
-            File.AppendAllText(OutputFileName,s);
-            interpreter.inter(GAparser.Codes,this.InputContent.Text);
-            File.AppendAllText(OutputFileName, "\r\n"+interpreter.result);
+            if (error.Length == 0)
+            {
+                File.AppendAllText(OutputFileName, s);
+                interpreter.inter(GAparser.Codes, this.InputContent.Text);
+                File.AppendAllText(OutputFileName, "\r\n" + interpreter.result);
+            }
+            else
+            {
+                System.Windows.MessageBox.Show(error,"错误",MessageBoxButton.OK);
+            }
             this.pb.Value = 100;
             this.run_button.Content = "运行完成！（点击以再次执行）";
             Process.Start("explorer.exe", @outputdir);
