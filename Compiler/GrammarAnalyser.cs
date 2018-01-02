@@ -23,7 +23,7 @@ namespace Compiler
         List<List<String>> sym_list;
        // HashSet<String> First_Statement = new HashSet<string>(new string[] {"call","begin","if","while","repeat","read","write" });
         HashSet<String> Follow_Statement = new HashSet<string>(new string[] { ".",";","end","else","until"});
-        HashSet<String> Follow_Operators = new HashSet<string>(new string[] { "+","-","*","/",";",".",")","end","then","do","else","until"});
+        HashSet<String> Follow_Operators = new HashSet<string>(new string[] { ",","+","-","*","/",";",".",")","end","then","do","else","until"});
         HashSet<String> Relation_operator = new HashSet<string>(new string[] { "<>","<=",">=","<",">","="});
         HashSet<String> state_header = new HashSet<string>(new string[] { "if", "while" ,"call","repeat","begin","read","write"});
         int index = 0;
@@ -805,8 +805,8 @@ namespace Compiler
                 if (sym_list[index][0] == "(")
                 {
                     index += 1;
-                    if (sym_list[index][1] == "标识符")
-                    {
+                    //if (sym_list[index][1] == "标识符")
+                   // {
                         expr();
                         gen("WRT", 0, 0);
                         //string str=query_symbol_table_stack(sym_list[index][0], "others");
@@ -821,11 +821,11 @@ namespace Compiler
                         while (index < sym_list.Count() && sym_list[index][0] == ",")
                         {
                             index += 1;
-                            if (sym_list[index][1] != "标识符")
+                            /*if (sym_list[index][1] != "标识符")
                             {
                                 error_message += "(Error Code 36)应为标识符(line:" + sym_list[index][3] + ")\r\n";
                                 return false;
-                            }
+                            }*/
                             expr();
                             gen("WRT", 0, 0);
                             //index += 1;
@@ -840,12 +840,12 @@ namespace Compiler
                             error_message += "(Error Code 22)漏右括号(line: " + sym_list[index][3] + ")\r\n";
                             return false;
                         }
-                    }
-                    else
-                    {
-                        error_message += "(Error Code 36)应为标识符(line:" + sym_list[index][3] + ")\r\n";
-                        return false;
-                    }
+                    //}
+                    //else
+                    //{
+                    //    error_message += "(Error Code 36)应为标识符(line:" + sym_list[index][3] + ")\r\n";
+                    //    return false;
+                   // }
                 }
                 else
                 {

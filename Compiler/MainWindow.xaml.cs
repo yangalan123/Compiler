@@ -78,7 +78,7 @@ namespace Compiler
             File.AppendAllText(OutputFileName, "\r\n"+interpreter.result);
             this.pb.Value = 100;
             this.run_button.Content = "运行完成！（点击以再次执行）";
-            //Process.Start("explorer.exe", @outputdir);
+            Process.Start("explorer.exe", @outputdir);
         }
 
         private void Button_Click_1(object sender, RoutedEventArgs e)//button for 'selecting input file'
